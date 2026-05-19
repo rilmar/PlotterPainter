@@ -31,11 +31,6 @@
   .control-row { display: flex; flex-direction: column; gap: 0.35rem; }
   .control-row label { font-size: 0.7rem; color: var(--ink2); display: flex; justify-content: space-between; align-items: center; }
   .control-row label span { font-size: 0.7rem; color: var(--ink); font-weight: 500; }
-
-
-  /* .control-row { width: 100%; font-family: var(--mono); font-size: 0.7rem; line-height: 1.6; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.6rem; resize: vertical; }
-  .control-row:focus { outline: none; border-color: var(--accent); } */
-
   input[type=range] { width: 100%; accent-color: var(--accent); height: 20px; cursor: pointer; }
   input[type=number] { width: 100%; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.6rem; height: 20px; cursor: pointer; }
   select { width: 100%; padding: 0.4rem 0.5rem; font-family: var(--mono); font-size: 0.72rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--ink); cursor: pointer; }
@@ -125,6 +120,17 @@
   .cfg-coord-row input[type=number]:focus { outline: none; border-color: var(--accent); }
   .cfg-count { font-size: 0.63rem; color: var(--ink3); padding-top: 2px; text-align: right; white-space: nowrap; }
   .no-cfg-msg { padding: 1rem 1.25rem; font-size: 0.75rem; color: var(--ink3); }
+
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+      /* display: none; <- Crashes Chrome on hover */
+      -webkit-appearance: none;
+      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+  }
+
+  input[type=number] {
+      -moz-appearance:textfield; /* Firefox */
+  }
 </style>
 </head>
 <body>
