@@ -553,7 +553,7 @@ function applyTmpl(tmpl,vars){
 }
 
 function buildGcode(W,H) {
-  const bedW=parseInt($('bedW').value), bedH=parseInt($('bedH').value);
+  let bedW=parseInt($('bedW').value), bedH=parseInt($('bedH').value);
   const feed=parseInt($('feed').value);
   const penDown=parseFloat($('penDown').value), penUp=parseFloat($('penUp').value);
   
