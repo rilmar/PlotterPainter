@@ -177,10 +177,10 @@
           <label>Stroke length <span id="strokeLenVal">40</span>px</label>
           <input type="range" id="strokeLen" min="10" max="120" value="40">
         </div>
-        <div class="control-row">
+        <!-- <div class="control-row">
           <label>Stroke width <span id="strokeWVal">3</span>px</label>
           <input type="range" id="strokeW" min="1" max="12" value="3">
-        </div>
+        </div> -->
         <div class="control-row">
           <label>Density <span id="densityVal">70</span>%</label>
           <input type="range" id="density" min="20" max="100" value="70">
@@ -375,7 +375,7 @@ let gcodeText = '', palette = [], strokes = [], imageFilename = '', layerCounts 
 let colorSettings = []; // [{enabled, dip, dipX, dipY, dipZ, dipEvery}, ...]
 
 // Slider readouts
-[['numColors','colorsVal',''],['strokeLen','strokeLenVal','px'],['strokeW','strokeWVal','px'],
+[['numColors','colorsVal',''],['strokeLen','strokeLenVal','px'],
  ['density','densityVal','%'],['jitter','jitterVal','°'],['bedW','bedWVal','mm'],
  ['bedH','bedHVal','mm'],['feed','feedVal',''],['penDown','penDownVal',''],['penUp','penUpVal','']
 ].forEach(([id,out,sfx]) => $(id).addEventListener('input', () => $(out).textContent = $(id).value + sfx));
@@ -717,7 +717,7 @@ async function generate() {
   strokeCanvas=document.createElement('canvas'); strokeCanvas.width=W; strokeCanvas.height=H;
   const stctx=strokeCanvas.getContext('2d');
   stctx.fillStyle='#fff'; stctx.fillRect(0,0,W,H);
-  const sw=parseInt($('strokeW').value)*scale;
+  const sw=3*scale; // use as 3 for clearer lines
   for(const s of strokes){
     const c=palette[s.ci];
     stctx.strokeStyle=`rgb(${c[0]},${c[1]},${c[2]})`; stctx.lineWidth=sw; stctx.lineCap='round';
@@ -776,7 +776,7 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 // ── Settings persistence ──────────────────────────────────────────────────────
 
 const SETTINGS_VERSION = 1;
-const SLIDER_IDS = ['numColors','strokeLen','strokeW','density','jitter','bedW','bedH','feed','penDown','penUp'];
+const SLIDER_IDS = ['numColors','strokeLen','density','jitter','bedW','bedH','feed','penDown','penUp'];
 const TMPL_IDS   = ['tmplStart','tmplEnd','tmplStroke','tmplColorChange','tmplDip'];
 
 function collectSettings() {
@@ -804,7 +804,7 @@ function applySettings(s) {
       const el = $(id);
       el.value = s.sliders[id];
       // update the displayed readout label
-      const sfxMap = {numColors:'',strokeLen:'px',strokeW:'px',density:'%',jitter:'°',bedW:'mm',bedH:'mm',feed:'',penDown:'mm', penUp:'mm'};
+      const sfxMap = {numColors:'',strokeLen:'px',density:'%',jitter:'°',bedW:'mm',bedH:'mm',feed:'',penDown:'mm', penUp:'mm'};
       const outId = id+'Val';
       if ($(outId)) $(outId).textContent = el.value + (sfxMap[id]||'');
     });
