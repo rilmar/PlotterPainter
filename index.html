@@ -177,10 +177,6 @@
           <label>Stroke length <span id="strokeLenVal">40</span>px</label>
           <input type="range" id="strokeLen" min="10" max="120" value="40">
         </div>
-        <!-- <div class="control-row">
-          <label>Stroke width <span id="strokeWVal">3</span>px</label>
-          <input type="range" id="strokeW" min="1" max="12" value="3">
-        </div> -->
         <div class="control-row">
           <label>Density <span id="densityVal">70</span>%</label>
           <input type="range" id="density" min="20" max="100" value="70">
@@ -214,12 +210,12 @@
           <input type="number" id="bedH" value="420">
         </div>
         <div class="control-row">
-          <label>X Offset <span id="xOffVal"></span>mm</label>
-          <input type="number" id="xOff" value="10">
+          <label>X Margin <span id="xMarginVal"></span>mm</label>
+          <input type="number" id="xMargin" value="0">
         </div>
         <div class="control-row">
-          <label>Y Offset <span id="yOffVal"></span>mm</label>
-          <input type="number" id="yOff" value="10">
+          <label>Y Offset <span id="yMarginVal"></span>mm</label>
+          <input type="number" id="yMargin" value="0">
         </div>
         <div class="control-row">
           <label>Feed rate <span id="feedVal">3000</span></label>
@@ -377,7 +373,8 @@ let colorSettings = []; // [{enabled, dip, dipX, dipY, dipZ, dipEvery}, ...]
 // Slider readouts
 [['numColors','colorsVal',''],['strokeLen','strokeLenVal','px'],
  ['density','densityVal','%'],['jitter','jitterVal','°'],['bedW','bedWVal','mm'],
- ['bedH','bedHVal','mm'],['feed','feedVal',''],['penDown','penDownVal',''],['penUp','penUpVal','']
+ ['bedH','bedHVal','mm'],['xMargin','xMarginVal','mm'],['yMargin','yMarginVal','mm'],
+ ['feed','feedVal',''],['penDown','penDownVal',''],['penUp','penUpVal','']
 ].forEach(([id,out,sfx]) => $(id).addEventListener('input', () => $(out).textContent = $(id).value + sfx));
 
 // File drop/pick
@@ -559,11 +556,15 @@ function buildGcode(W,H) {
   const bedW=parseInt($('bedW').value), bedH=parseInt($('bedH').value);
   const feed=parseInt($('feed').value);
   const penDown=parseFloat($('penDown').value), penUp=parseFloat($('penUp').value);
-  const sx=bedW/W, sy=bedH/H;
+  
+  const xMargin=parseFloat($('xMargin').value), yMargin=parseFloat($('yMargin').value);
   const tStart=$('tmplStart').value, tEnd=$('tmplEnd').value;
   const tStroke=$('tmplStroke').value;
   const tChange=$('tmplColorChange').value, tDip=$('tmplDip').value;
 
+  // use margins - offset on x and y, subtract 2xmargin from bed size
+  bedW-=2*xMargin; bedH-=yMargin;
+  const sx=bedW/W, sy=bedH/H;
   const scale = Math.min(sx, sy);
 
   const lines=[
@@ -608,8 +609,8 @@ function buildGcode(W,H) {
       }
     }
 
-    const x1=(s.x1*scale).toFixed(3),y1=((H-s.y1)*scale).toFixed(3);
-    const x2=(s.x2*scale).toFixed(3),y2=((H-s.y2)*scale).toFixed(3);
+    const x1=(s.x1*scale+xMargin).toFixed(3),y1=((H-s.y1)*scale+yMargin).toFixed(3);
+    const x2=(s.x2*scale+xMargin).toFixed(3),y2=((H-s.y2)*scale+yMargin).toFixed(3);
     lines.push(...applyTmpl(tStroke,{X1:x1,Y1:y1,X2:x2,Y2:y2,FEED:feed,Z_UP:penUp.toFixed(1),Z_DOWN:penDown.toFixed(1)}).split('\n'));
   }
 
