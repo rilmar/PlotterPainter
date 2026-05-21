@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dotwork G-code Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #252525;
+    --border: #2e2e2e;
+    --accent: #c8f542;
+    --accent-dim: #8ab02e;
+    --text: #e8e8e0;
+    --text-muted: #777;
+    --text-dim: #444;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --radius: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  header {
+    grid-column: 1 / -1;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  header .header-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    flex: 1;
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-tab {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    transition: all 0.12s;
+  }
+
+  .nav-tab:hover { color: var(--text); border-color: var(--text-muted); }
+  .nav-tab.active { background: var(--accent); color: #0f0f0f; border-color: var(--accent); }
+
+  /* Page layout */
+  .page { display: none; grid-column: 1 / -1; }
+  .page.active { display: contents; }
+
+  .sidebar {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Settings page full-width */
+  .settings-page {
+    grid-column: 1 / -1;
+    padding: 32px 40px;
+    overflow-y: auto;
+    display: none;
+    flex-direction: column;
+    gap: 28px;
+    max-width: 900px;
+  }
+
+  .settings-page.active { display: flex; }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .section-head {
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-body { padding: 14px; }
+
+  .drop-zone {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(200,245,66,0.04);
+  }
+
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+
+  .drop-zone-icon { font-size: 28px; margin-bottom: 8px; opacity: 0.4; }
+  .drop-zone p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .drop-zone strong { color: var(--text); font-weight: 500; }
+
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .field-row:last-child { margin-bottom: 0; }
+
+  label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  input[type=number], input[type=range], select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 8px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  input[type=number]:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input[type=number] { width: 70px; }
+
+  textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px 10px;
+    outline: none;
+    resize: vertical;
+    width: 100%;
+    line-height: 1.6;
+    transition: border-color 0.15s;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border: none;
+    border-radius: 2px;
+    background: var(--border);
+    padding: 0;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+  }
+
+  .val-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    min-width: 30px;
+    text-align: right;
+  }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.12s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0f0f0f;
+    border-color: var(--accent);
+  }
+
+  .btn-primary:hover { background: #d4ff55; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+  }
+
+  .btn-ghost:hover { color: var(--text); border-color: var(--text-muted); }
+  .btn-ghost:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .color-item {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .swatch {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+  }
+
+  .slider-wrap { display: flex; align-items: center; gap: 8px; }
+
+  .empty-state {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.8;
+  }
+
+  .canvas-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111;
+    overflow: hidden;
+  }
+
+  .canvas-area canvas {
+    max-width: 100%;
+    max-height: 100%;
+    image-rendering: pixelated;
+  }
+
+  .canvas-placeholder {
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 12px;
+    text-align: center;
+    line-height: 2;
+  }
+
+  .toolbar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .toolbar-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .status-bar {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 20px;
+  }
+
+  .status-bar span { color: var(--accent); }
+
+  .gcode-preview {
+    flex: 0 0 180px;
+    border-top: 1px solid var(--border);
+    overflow-y: auto;
+    background: var(--bg);
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    white-space: pre;
+  }
+
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.1s;
+  }
+
+  select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: var(--radius);
+    outline: none;
+    cursor: pointer;
+  }
+
+  select:focus { border-color: var(--accent); }
+
+  .hint { font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-top: 6px; }
+
+  .toggle-btn.active {
+    background: var(--accent);
+    color: #0f0f0f;
+    border-color: var(--accent);
+  }
+
+  .settings-intro {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+    line-height: 1.7;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .gcode-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .gcode-label span {
+    color: var(--text-dim);
+    font-size: 10px;
+  }
+
+  .save-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent-dim);
+    padding: 2px 8px;
+    border: 1px solid var(--accent-dim);
+    border-radius: var(--radius);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .save-badge.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DOTWORK / GCODE</h1>
+  <span class="header-sub">image → color layers → stipple dots → gcode</span>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tabMain" onclick="switchTab('main')">Generator</button>
+    <button class="nav-tab" id="tabSettings" onclick="switchTab('settings')">Settings</button>
+  </div>
+</header>
+
+<!-- MAIN PAGE -->
+<div class="page active" id="pageMain">
+
+  <aside class="sidebar">
+
+    <div class="section">
+      <div class="section-head">01 · Image</div>
+      <div class="section-body">
+        <div class="drop-zone" id="dropZone">
+          <input type="file" id="fileInput" accept="image/*">
+          <div class="drop-zone-icon">⬡</div>
+          <p><strong>Drop image here</strong><br>or click to browse<br><span style="font-size:11px;color:#444">PNG · JPG · GIF · WebP</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">02 · Quantize</div>
+      <div class="section-body">
+        <div class="field-row">
+          <label>Colors N</label>
+          <input type="number" id="colorCount" min="2" max="12" value="5" step="1" style="width:55px">
+          <label>Dither</label>
+          <select id="ditherMode">
+            <option value="none">none</option>
+            <option value="bayer" selected>bayer</option>
+          </select>
+        </div>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-primary" id="quantizeBtn" disabled>Analyze Image</button>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        03 · Color Layers
+        <span id="layerCount" style="color:var(--accent-dim);font-size:11px"></span>
+      </div>
+      <div class="section-body" id="colorLayerList">
+        <div class="empty-state">analyze an image<br>to see color layers</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">04 · Dot Style</div>
+      <div class="section-body">
+        <div class="field-row">
+          <label>Dot px</label>
+          <input type="number" id="dotSize" min="1" max="20" value="3" step="0.5" style="width:60px">
+          <label>Pattern</label>
+          <select id="dotPattern">
+            <option value="random">random</option>
+            <option value="grid">grid</option>
+            <option value="hex">hex</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Density</label>
+          <input type="range" id="densityScale" min="1" max="10" value="3" step="0.5">
+          <span class="val-badge" id="densityScaleVal">3×</span>
+        </div>
+        <div class="field-row">
+          <label>Jitter</label>
+          <input type="range" id="jitter" min="0" max="100" value="40" step="1">
+          <span class="val-badge" id="jitterVal">40%</span>
+        </div>
+        <div class="field-row" style="margin-top:4px">
+          <label>Invert</label>
+          <button class="btn btn-ghost toggle-btn" id="invertBtn" style="font-size:11px;padding:4px 12px;min-width:60px">off</button>
+        </div>
+        <div class="hint" id="invertHint" style="display:none">dots on black · density inverted per layer</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">05 · G-code Bounds</div>
+      <div class="section-body">
+        <div class="field-row">
+          <label>X mm</label>
+          <input type="number" id="gcodeX" min="1" max="2000" value="200" step="1">
+          <label>Y mm</label>
+          <input type="number" id="gcodeY" min="1" max="2000" value="150" step="1">
+        </div>
+        <div class="field-row">
+          <label>X margin</label>
+          <input type="number" id="marginX" min="0" max="500" value="0" step="1" style="width:60px">
+          <label>Y margin</label>
+          <input type="number" id="marginY" min="0" max="500" value="0" step="1" style="width:60px">
+        </div>
+        <div class="field-row">
+          <label>Z down</label>
+          <input type="number" id="zDown" min="-20" max="0" value="-1" step="0.1" style="width:60px">
+          <label>Z up</label>
+          <input type="number" id="zUp" min="0" max="50" value="5" step="0.5" style="width:60px">
+        </div>
+        <div class="field-row">
+          <label>Feed mm/min</label>
+          <input type="number" id="feedRate" min="100" max="10000" value="3000" step="100" style="width:80px">
+        </div>
+        <div class="hint">margins inset drawing · dots sorted Y→X for travel efficiency</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="renderBtn" disabled>Render Preview</button>
+      <button class="btn btn-ghost" id="gcodeBtn" disabled>Export G-code</button>
+    </div>
+
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <span class="toolbar-label">View:</span>
+      <button class="btn btn-ghost" id="viewOriginal" disabled style="font-size:11px;padding:5px 10px">Original</button>
+      <button class="btn btn-ghost" id="viewQuantized" disabled style="font-size:11px;padding:5px 10px">Quantized</button>
+      <button class="btn btn-primary" id="viewDots" disabled style="font-size:11px;padding:5px 10px">Dotwork</button>
+      <div style="flex:1"></div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted)" id="imageInfo"></span>
+    </div>
+
+    <div class="canvas-area" id="canvasArea">
+      <div class="canvas-placeholder" id="canvasPlaceholder">
+        ◌ ◌ ◌<br>
+        load an image to begin
+      </div>
+      <canvas id="previewCanvas" style="display:none"></canvas>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <span style="color:var(--text-muted)">ready</span>
+    </div>
+
+    <div class="gcode-preview" id="gcodePreview" style="display:none"></div>
+  </main>
+
+</div><!-- /pageMain -->
+
+<!-- SETTINGS PAGE -->
+<div class="settings-page" id="pageSettings">
+  <p class="settings-intro">
+    Define custom G-code blocks injected into the output. Variables: <code style="color:var(--accent)">{{FEED}}</code> <code style="color:var(--accent)">{{Z_UP}}</code> <code style="color:var(--accent)">{{Z_DOWN}}</code>
+  </p>
+
+  <div class="settings-grid">
+
+    <div class="section">
+      <div class="section-head">
+        Start G-code
+        <span class="save-badge" id="startBadge">saved</span>
+      </div>
+      <div class="section-body">
+        <div class="gcode-label">
+          Runs before all layers
+          <span>inserted after header comment</span>
+        </div>
+        <textarea id="startGcode" rows="10" spellcheck="false" placeholder="; Start routine&#10;G21 ; mm&#10;G90 ; absolute&#10;G28 ; home all&#10;G1 Z{{Z_UP}} F{{FEED}} ; safe height"></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        End G-code
+        <span class="save-badge" id="endBadge">saved</span>
+      </div>
+      <div class="section-body">
+        <div class="gcode-label">
+          Runs after all layers
+          <span>inserted before EOF comment</span>
+        </div>
+        <textarea id="endGcode" rows="10" spellcheck="false" placeholder="; End routine&#10;G1 Z{{Z_UP}} F{{FEED}} ; lift&#10;G28 X Y ; home XY&#10;M84 ; motors off"></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        Layer Change G-code
+        <span class="save-badge" id="layerBadge">saved</span>
+      </div>
+      <div class="section-body">
+        <div class="gcode-label">
+          Runs between each color layer
+          <span>e.g. pause for pen swap</span>
+        </div>
+        <textarea id="layerGcode" rows="10" spellcheck="false" placeholder="; Layer change&#10;G1 Z{{Z_UP}} F{{FEED}}&#10;G28 X Y&#10;M0 ; pause for tool change"></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        G-code Options
+      </div>
+      <div class="section-body" style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div class="gcode-label">Coordinate precision (decimal places)</div>
+          <div class="field-row" style="margin:0">
+            <input type="number" id="coordPrecision" min="1" max="6" value="3" step="1" style="width:60px">
+            <label>decimals</label>
+          </div>
+        </div>
+        <div>
+          <div class="gcode-label">Comment style</div>
+          <div class="field-row" style="margin:0">
+            <select id="commentStyle">
+              <option value="semicolon" selected>; semicolon</option>
+              <option value="paren">( parens )</option>
+              <option value="none">none</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="gcode-label">Sort dots within each layer</div>
+          <div class="field-row" style="margin:0">
+            <select id="sortMode">
+              <option value="yx" selected>Y then X (raster)</option>
+              <option value="xy">X then Y (column)</option>
+              <option value="none">unsorted (draw order)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="gcode-label">Layer separator comment</div>
+          <input type="text" id="layerSep" value="=== Layer {{N}} ===" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:11px;padding:5px 8px;outline:none">
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+    <button class="btn btn-ghost" onclick="resetSettings()">Reset to Defaults</button>
+  </div>
+
+</div><!-- /pageSettings -->
+
+<script>
+const $ = id => document.getElementById(id);
+
+// --- State ---
+let originalImage = null;
+let originalCanvas = null;
+let quantizedData = null;
+let colorPalette = [];
+let layerDensities = [];
+let dotPositions = [];
+let currentView = 'dots';
+let invertColors = false;
+
+// --- Tab navigation ---
+function switchTab(tab) {
+  $('pageMain').classList.toggle('active', tab === 'main');
+  $('pageSettings').classList.toggle('active', tab === 'settings');
+  $('tabMain').classList.toggle('active', tab === 'main');
+  $('tabSettings').classList.toggle('active', tab === 'settings');
+}
+
+// --- Settings persistence ---
+const DEFAULTS = {
+  startGcode: 'G21 ; mm units\nG90 ; absolute positioning\nG28 ; home all axes\nG1 Z{{Z_UP}} F{{FEED}} ; move to safe height',
+  endGcode: 'G1 Z{{Z_UP}} F{{FEED}} ; final lift\nG28 X Y ; home XY\nM84 ; disable motors',
+  layerGcode: '',
+  coordPrecision: '3',
+  commentStyle: 'semicolon',
+  sortMode: 'yx',
+  layerSep: '=== Layer {{N}} ==='
+};
+
+function loadSettings() {
+  const s = JSON.parse(localStorage.getItem('dotwork_settings') || '{}');
+  $('startGcode').value    = s.startGcode    ?? DEFAULTS.startGcode;
+  $('endGcode').value      = s.endGcode      ?? DEFAULTS.endGcode;
+  $('layerGcode').value    = s.layerGcode    ?? DEFAULTS.layerGcode;
+  $('coordPrecision').value= s.coordPrecision?? DEFAULTS.coordPrecision;
+  $('commentStyle').value  = s.commentStyle  ?? DEFAULTS.commentStyle;
+  $('sortMode').value      = s.sortMode      ?? DEFAULTS.sortMode;
+  $('layerSep').value      = s.layerSep      ?? DEFAULTS.layerSep;
+}
+
+function saveSettings() {
+  const s = {
+    startGcode:     $('startGcode').value,
+    endGcode:       $('endGcode').value,
+    layerGcode:     $('layerGcode').value,
+    coordPrecision: $('coordPrecision').value,
+    commentStyle:   $('commentStyle').value,
+    sortMode:       $('sortMode').value,
+    layerSep:       $('layerSep').value,
+  };
+  localStorage.setItem('dotwork_settings', JSON.stringify(s));
+  ['startBadge','endBadge','layerBadge'].forEach(id => {
+    const el = $(id);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 1800);
+  });
+}
+
+function resetSettings() {
+  if (!confirm('Reset all settings to defaults?')) return;
+  localStorage.removeItem('dotwork_settings');
+  loadSettings();
+}
+
+function getSettings() {
+  return {
+    startGcode:     $('startGcode').value,
+    endGcode:       $('endGcode').value,
+    layerGcode:     $('layerGcode').value,
+    coordPrecision: parseInt($('coordPrecision').value) || 3,
+    commentStyle:   $('commentStyle').value,
+    sortMode:       $('sortMode').value,
+    layerSep:       $('layerSep').value,
+  };
+}
+
+function applyVars(str, vars) {
+  return str
+    .replace(/\{\{FEED\}\}/g, vars.feed)
+    .replace(/\{\{Z_UP\}\}/g, vars.zUp)
+    .replace(/\{\{Z_DOWN\}\}/g, vars.zDown)
+    .replace(/\{\{N\}\}/g, vars.n ?? '');
+}
+
+function makeComment(text, style) {
+  if (style === 'none') return '';
+  if (style === 'paren') return `(${text})`;
+  return `; ${text}`;
+}
+
+loadSettings();
+
+// --- Image loading ---
+const dropZone = $('dropZone');
+const fileInput = $('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadFile(file);
+});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      originalImage = img;
+      const maxDim = 800;
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      originalCanvas = document.createElement('canvas');
+      originalCanvas.width = w; originalCanvas.height = h;
+      originalCanvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      $('imageInfo').textContent = `${img.width}×${img.height}px → ${w}×${h}`;
+      $('quantizeBtn').disabled = false;
+      setStatus(`image loaded: ${img.width}×${img.height}px`);
+      showCanvas(originalCanvas);
+      quantizedData = null;
+      dotPositions = [];
+      $('renderBtn').disabled = true;
+      $('gcodeBtn').disabled = true;
+      resetLayers();
+      $('viewOriginal').disabled = false;
+      setActiveView('viewOriginal');
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function setStatus(msg) {
+  $('statusBar').innerHTML = `<span style="color:var(--text-muted)">${msg}</span>`;
+}
+
+function setStatusKV(pairs) {
+  $('statusBar').innerHTML = pairs.map(([k,v]) => `${k}: <span>${v}</span>`).join(' &nbsp;·&nbsp; ');
+}
+
+function showCanvas(cvs) {
+  const pc = $('previewCanvas');
+  pc.width = cvs.width; pc.height = cvs.height;
+  pc.getContext('2d').drawImage(cvs, 0, 0);
+  pc.style.display = 'block';
+  $('canvasPlaceholder').style.display = 'none';
+}
+
+function resetLayers() {
+  $('colorLayerList').innerHTML = '<div class="empty-state">analyze an image<br>to see color layers</div>';
+  $('layerCount').textContent = '';
+  colorPalette = [];
+  layerDensities = [];
+}
+
+// --- Controls ---
+$('jitter').addEventListener('input', () => { $('jitterVal').textContent = $('jitter').value + '%'; });
+$('densityScale').addEventListener('input', () => { $('densityScaleVal').textContent = parseFloat($('densityScale').value).toFixed(1) + '×'; });
+
+$('invertBtn').addEventListener('click', () => {
+  invertColors = !invertColors;
+  $('invertBtn').textContent = invertColors ? 'on' : 'off';
+  $('invertBtn').classList.toggle('active', invertColors);
+  $('invertHint').style.display = invertColors ? 'block' : 'none';
+});
+
+$('viewOriginal').addEventListener('click', () => {
+  if (originalCanvas) { showCanvas(originalCanvas); currentView = 'original'; setActiveView('viewOriginal'); }
+});
+$('viewQuantized').addEventListener('click', () => {
+  if (quantizedData) { showCanvas(quantizedData.canvas); currentView = 'quantized'; setActiveView('viewQuantized'); }
+});
+$('viewDots').addEventListener('click', () => {
+  if (dotPositions.length) renderDots();
+  currentView = 'dots'; setActiveView('viewDots');
+});
+
+function setActiveView(activeId) {
+  ['viewOriginal','viewQuantized','viewDots'].forEach(id => {
+    const btn = $(id);
+    if (!btn) return;
+    btn.classList.toggle('btn-primary', id === activeId);
+    btn.classList.toggle('btn-ghost', id !== activeId);
+  });
+}
+
+// --- Quantization ---
+function getPixels(canvas) {
+  return canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+}
+
+function medianCut(pixels, n) {
+  let buckets = [[]];
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    if (pixels.data[i+3] < 128) continue;
+    buckets[0].push([pixels.data[i], pixels.data[i+1], pixels.data[i+2]]);
+  }
+  while (buckets.length < n) {
+    let maxRange = -1, splitIdx = 0;
+    for (let b = 0; b < buckets.length; b++) {
+      const bucket = buckets[b];
+      if (!bucket.length) continue;
+      let minR=255,maxR=0,minG=255,maxG=0,minB=255,maxB=0;
+      for (const [r,g,bb] of bucket) {
+        if(r<minR)minR=r; if(r>maxR)maxR=r;
+        if(g<minG)minG=g; if(g>maxG)maxG=g;
+        if(bb<minB)minB=bb; if(bb>maxB)maxB=bb;
+      }
+      const range = Math.max(maxR-minR, maxG-minG, maxB-minB);
+      if (range > maxRange) { maxRange = range; splitIdx = b; }
+    }
+    const bucket = buckets[splitIdx];
+    let minR=255,maxR=0,minG=255,maxG=0,minB=255,maxB=0;
+    for (const [r,g,b] of bucket) {
+      if(r<minR)minR=r; if(r>maxR)maxR=r;
+      if(g<minG)minG=g; if(g>maxG)maxG=g;
+      if(b<minB)minB=b; if(b>maxB)maxB=b;
+    }
+    const rr=maxR-minR, rg=maxG-minG, rb=maxB-minB;
+    const ch = rr>=rg && rr>=rb ? 0 : rg>=rb ? 1 : 2;
+    bucket.sort((a,b2) => a[ch]-b2[ch]);
+    const mid = Math.floor(bucket.length/2);
+    buckets.splice(splitIdx, 1, bucket.slice(0,mid), bucket.slice(mid));
+  }
+  return buckets.filter(b=>b.length>0).slice(0,n).map(bucket => {
+    let r=0,g=0,b=0;
+    for(const px of bucket){r+=px[0];g+=px[1];b+=px[2];}
+    return [Math.round(r/bucket.length), Math.round(g/bucket.length), Math.round(b/bucket.length)];
+  });
+}
+
+function colorDist(a, b) {
+  return (a[0]-b[0])**2 + (a[1]-b[1])**2 + (a[2]-b[2])**2;
+}
+
+function nearestColor(rgb, palette) {
+  let best = 0, bestD = Infinity;
+  for (let i = 0; i < palette.length; i++) {
+    const d = colorDist(rgb, palette[i]);
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  return best;
+}
+
+function toGray(r,g,b) { return 0.299*r + 0.587*g + 0.114*b; }
+
+const bayer4 = [
+  [ 0,  8,  2, 10],
+  [12,  4, 14,  6],
+  [ 3, 11,  1,  9],
+  [15,  7, 13,  5]
+];
+
+$('quantizeBtn').addEventListener('click', async () => {
+  if (!originalCanvas) return;
+  $('quantizeBtn').disabled = true;
+  setStatus('quantizing…');
+  await sleep(10);
+
+  const n = Math.max(2, Math.min(12, parseInt($('colorCount').value)||5));
+  const dither = $('ditherMode').value;
+  const pixels = getPixels(originalCanvas);
+  const w = originalCanvas.width, h = originalCanvas.height;
+
+  setProgress(20); await sleep(10);
+  const palette = medianCut(pixels, n);
+  setProgress(50); await sleep(10);
+
+  palette.sort((a,b) => toGray(...a) - toGray(...b));
+
+  const qCanvas = document.createElement('canvas');
+  qCanvas.width = w; qCanvas.height = h;
+  const qCtx = qCanvas.getContext('2d');
+  const qImg = qCtx.createImageData(w, h);
+  const assignments = new Uint8Array(w * h);
+  const dataCopy = new Uint8ClampedArray(pixels.data);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      let r = dataCopy[idx], g = dataCopy[idx+1], b = dataCopy[idx+2];
+      if (dither === 'bayer') {
+        const t = (bayer4[y%4][x%4] / 16 - 0.5) * 40;
+        r = Math.max(0,Math.min(255, r+t));
+        g = Math.max(0,Math.min(255, g+t));
+        b = Math.max(0,Math.min(255, b+t));
+      }
+      const ci = nearestColor([r,g,b], palette);
+      assignments[y*w+x] = ci;
+      qImg.data[idx]   = palette[ci][0];
+      qImg.data[idx+1] = palette[ci][1];
+      qImg.data[idx+2] = palette[ci][2];
+      qImg.data[idx+3] = 255;
+    }
+  }
+
+  setProgress(80); await sleep(10);
+  qCtx.putImageData(qImg, 0, 0);
+  colorPalette = palette;
+  quantizedData = { canvas: qCanvas, assignments, w, h };
+
+  buildLayerUI(palette);
+  setProgress(100); await sleep(200); setProgress(0);
+
+  showCanvas(qCanvas);
+  $('viewQuantized').disabled = false;
+  $('viewDots').disabled = false;
+  $('renderBtn').disabled = false;
+  $('quantizeBtn').disabled = false;
+  setStatusKV([['colors', n], ['pixels', w*h], ['dither', dither]]);
+  $('layerCount').textContent = `${n} layers`;
+  setActiveView('viewQuantized');
+});
+
+function buildLayerUI(palette) {
+  layerDensities = palette.map(() => 0.5);
+  const list = $('colorLayerList');
+  list.innerHTML = '';
+  palette.forEach((rgb, i) => {
+    const gray = toGray(...rgb);
+    const hexColor = `#${rgb.map(v=>v.toString(16).padStart(2,'0')).join('')}`;
+    const defaultDensity = Math.round((1 - gray/255) * 80 + 5);
+    layerDensities[i] = defaultDensity / 100;
+    const item = document.createElement('div');
+    item.className = 'color-item';
+    item.innerHTML = `
+      <div class="swatch" style="background:${hexColor}" title="RGB(${rgb.join(',')})"></div>
+      <div class="slider-wrap">
+        <input type="range" min="0" max="100" value="${defaultDensity}" step="1">
+      </div>
+      <span class="val-badge" id="densVal${i}">${defaultDensity}%</span>
+    `;
+    const slider = item.querySelector('input[type=range]');
+    slider.addEventListener('input', () => {
+      layerDensities[i] = slider.value / 100;
+      $(`densVal${i}`).textContent = slider.value + '%';
+    });
+    list.appendChild(item);
+  });
+}
+
+function setProgress(p) { $('progressFill').style.width = p + '%'; }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// --- Dot rendering ---
+$('renderBtn').addEventListener('click', async () => {
+  if (!quantizedData) return;
+  $('renderBtn').disabled = true;
+  setStatus('placing dots…');
+  await sleep(10);
+  await renderDots();
+  $('renderBtn').disabled = false;
+  $('gcodeBtn').disabled = false;
+  currentView = 'dots';
+  setActiveView('viewDots');
+});
+
+async function renderDots() {
+  if (!quantizedData) return;
+  const { assignments, w, h } = quantizedData;
+  const dotR = parseFloat($('dotSize').value) || 3;
+  const jitter = parseInt($('jitter').value) / 100;
+  const pattern = $('dotPattern').value;
+  const densityMult = parseFloat($('densityScale').value) || 3;
+
+  const pc = $('previewCanvas');
+  pc.width = w; pc.height = h;
+  const ctx = pc.getContext('2d');
+  const bgColor = invertColors ? '#000' : '#fff';
+  const dotColor = invertColors ? '#fff' : '#000';
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, w, h);
+  pc.style.display = 'block';
+
+  dotPositions = colorPalette.map(() => []);
+
+  for (let ci = 0; ci < colorPalette.length; ci++) {
+    const rawDensity = layerDensities[ci];
+    const density = Math.min(1, (invertColors ? 1 - rawDensity : rawDensity) * densityMult / 3);
+    if (density <= 0) continue;
+
+    const dots = [];
+
+    if (pattern === 'random') {
+      // Denser: divide by smaller factor
+      const total = Math.round(density * w * h / (dotR * dotR * 4));
+      const regionPixels = [];
+      for (let i = 0; i < assignments.length; i++) {
+        if (assignments[i] === ci) regionPixels.push(i);
+      }
+      if (!regionPixels.length) continue;
+      const picked = Math.min(total, regionPixels.length);
+      shuffle(regionPixels);
+      for (let k = 0; k < picked; k++) {
+        const px = regionPixels[k];
+        const px_x = px % w;
+        const px_y = Math.floor(px / w);
+        dots.push([px_x + (Math.random()-0.5)*dotR*jitter*2, px_y + (Math.random()-0.5)*dotR*jitter*2]);
+      }
+    } else {
+      // Tighter spacing: density drives spacing more aggressively
+      const minSpacing = dotR * 1.1;
+      const maxSpacing = dotR * 8;
+      const spacing = Math.max(minSpacing, maxSpacing * (1 - density * 0.92));
+      const hexOffset = pattern === 'hex';
+      for (let gy = dotR; gy < h - dotR; gy += spacing) {
+        const rowOffset = hexOffset && Math.floor(gy/spacing)%2===1 ? spacing*0.5 : 0;
+        for (let gx = dotR + rowOffset; gx < w - dotR; gx += spacing) {
+          const jx = (Math.random()-0.5)*spacing*jitter*0.8;
+          const jy = (Math.random()-0.5)*spacing*jitter*0.8;
+          const sx = Math.round(Math.max(0, Math.min(w-1, gx+jx)));
+          const sy = Math.round(Math.max(0, Math.min(h-1, gy+jy)));
+          if (assignments[sy*w+sx] === ci) dots.push([gx+jx, gy+jy]);
+        }
+      }
+    }
+
+    dotPositions[ci] = dots;
+    ctx.fillStyle = dotColor;
+    for (const [dx, dy] of dots) {
+      ctx.beginPath();
+      ctx.arc(dx, dy, dotR/2, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  const total = dotPositions.reduce((s,a) => s+a.length, 0);
+  setStatusKV([['layers', colorPalette.length], ['total dots', total.toLocaleString()], ['dot px', dotR], ['density', densityMult+'×'], ['mode', invertColors?'inverted':'normal']]);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// --- G-code export ---
+$('gcodeBtn').addEventListener('click', () => {
+  if (!dotPositions.length) return;
+
+  const xBound = parseFloat($('gcodeX').value) || 200;
+  const yBound = parseFloat($('gcodeY').value) || 150;
+  const marginX = parseFloat($('marginX').value) || 0;
+  const marginY = parseFloat($('marginY').value) || 0;
+  const zDown = parseFloat($('zDown').value) ?? -1;
+  const zUp = parseFloat($('zUp').value) ?? 5;
+  const feed = parseInt($('feedRate').value) || 3000;
+  const { w, h } = quantizedData;
+
+  const usableX = xBound - marginX * 2;
+  const usableY = yBound - marginY * 2;
+  const scale = Math.min(usableX / w, usableY / h);
+
+  const s = getSettings();
+  const prec = s.coordPrecision;
+  const cStyle = s.commentStyle;
+  const sortMode = s.sortMode;
+
+  const vars = { feed, zUp: zUp.toFixed(2), zDown: zDown.toFixed(2) };
+
+  function C(text) { return makeComment(text, cStyle); }
+  function fmt(n) { return n.toFixed(prec); }
+
+  const lines = [];
+
+  // Header comments
+  if (cStyle !== 'none') {
+    lines.push(C('Dotwork G-code — generated by DOTWORK/GCODE'));
+    lines.push(C(`Image: ${w}x${h}px → ${(w*scale).toFixed(1)}x${(h*scale).toFixed(1)}mm  margins: X±${marginX}mm Y±${marginY}mm`));
+    lines.push(C(`Layers: ${colorPalette.length}  Total dots: ${dotPositions.reduce((s,a)=>s+a.length,0)}`));
+    lines.push(C(`Mode: ${invertColors?'INVERTED':'normal'}  Sort: ${sortMode}`));
+    lines.push('');
+  }
+
+  // Start G-code
+  const startBlock = applyVars(s.startGcode, vars).trim();
+  if (startBlock) { lines.push(...startBlock.split('\n')); lines.push(''); }
+
+  // Layers
+  for (let ci = 0; ci < colorPalette.length; ci++) {
+    const dots = dotPositions[ci];
+    if (!dots || !dots.length) continue;
+
+    // Layer separator
+    if (ci > 0 && s.layerGcode.trim()) {
+      const lcBlock = applyVars(s.layerGcode, {...vars, n: ci+1}).trim();
+      if (lcBlock) { lines.push(...lcBlock.split('\n')); lines.push(''); }
+    }
+
+    const rgb = colorPalette[ci];
+    const gray = Math.round(toGray(...rgb));
+    const sepText = applyVars(s.layerSep, {...vars, n: ci+1});
+    if (cStyle !== 'none') {
+      lines.push(C(`${sepText} — RGB(${rgb.join(',')}) gray=${gray} density=${Math.round(layerDensities[ci]*100)}%`));
+      lines.push(C(`${dots.length} dots`));
+    }
+
+    // Convert to mm coords
+    const mmDots = dots.map(([px, py]) => [px * scale + marginX, py * scale + marginY]);
+
+    // Sort
+    if (sortMode === 'yx') {
+      mmDots.sort((a, b) => a[1] - b[1] || a[0] - b[0]);
+    } else if (sortMode === 'xy') {
+      mmDots.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    }
+
+    lines.push(`G1 Z${fmt(zUp)} F${feed}`);
+    for (const [gx, gy] of mmDots) {
+      lines.push(`G1 X${fmt(gx)} Y${fmt(gy)} F${feed}`);
+      lines.push(`G1 Z${fmt(zDown)} F${feed}`);
+      lines.push(`G1 Z${fmt(zUp)} F${feed}`);
+    }
+    lines.push('');
+  }
+
+  // End G-code
+  const endBlock = applyVars(s.endGcode, vars).trim();
+  if (endBlock) { lines.push(...endBlock.split('\n')); lines.push(''); }
+
+  if (cStyle !== 'none') lines.push(C('=== END ==='));
+
+  const gcode = lines.join('\n');
+  const preview = $('gcodePreview');
+  preview.textContent = gcode.slice(0, 4000) + (gcode.length > 4000 ? '\n\n' + C('[preview truncated — full file in download]') : '');
+  preview.style.display = 'block';
+
+  const blob = new Blob([gcode], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'dotwork.gcode'; a.click();
+  URL.revokeObjectURL(url);
+
+  const totalDots = dotPositions.reduce((s,a)=>s+a.length,0);
+  setStatusKV([
+    ['gcode lines', lines.length.toLocaleString()],
+    ['dots', totalDots.toLocaleString()],
+    ['bounds', `${(w*scale).toFixed(1)}×${(h*scale).toFixed(1)}mm`],
+    ['margins', `X±${marginX} Y±${marginY}mm`],
+    ['sort', sortMode]
+  ]);
+});
+</script>
+</body>
+</html>
