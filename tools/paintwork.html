@@ -5,59 +5,101 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Plotter Painter</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,500;1,300&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
+  /* :root {
     --bg: #383838; --panel: #2e2e2e; --border: #42403d;
-    --ink: #ededed; --ink2: #cfcac3; --ink3: #b9b4af;
-    --accent: #c45c2e; --mono: 'DM Mono', monospace; --serif: 'Fraunces', Georgia, serif;
+    --text: #ededed; --text-muted: #cfcac3; --text-dim: #b9b4af;
+    --accent: #c45c2e; --mono: 'DM Mono', monospace; --sans: 'Fraunces', Georgia, serif;
+  } */
+
+  :root {
+    --bg: #0f0f0f;
+    --panel: #1a1a1a;
+    --surface2: #252525;
+    --border: #2e2e2e;
+    --accent: #c8f542;
+    --accent-dim: #8ab02e;
+    --text: #e8e8e0;
+    --text-muted: #777;
+    --text-dim: #444;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+    --radius: 6px;
   }
-  body { font-family: var(--mono); background: var(--bg); color: var(--ink); min-height: 100vh; display: flex; flex-direction: column; }
-  header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); background: var(--panel); display: flex; align-items: baseline; gap: 1rem; }
-  header h1 { font-family: var(--serif); font-weight: 300; font-size: 1.5rem; letter-spacing: -0.02em; }
-  header span { font-size: 0.7rem; color: var(--ink3); letter-spacing: 0.08em; text-transform: uppercase; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+
+   header {
+    grid-column: 1 / -1;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); background: var(--panel); display: flex; align-items: baseline; gap: 1rem; } */
+  header h1 {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  header span { font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.08em; }
   .app { display: grid; grid-template-columns: 280px 1fr; flex: 1; min-height: 0; }
   .sidebar { background: var(--panel); border-right: 1px solid var(--border); padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; }
-  .section-label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 0.6rem; display: block; }
+  .section-label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.6rem; display: block; }
   .drop-zone { border: 1.5px dashed var(--border); border-radius: 6px; padding: 1.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.15s; background: var(--bg); }
   .drop-zone:hover, .drop-zone.dragover { border-color: var(--accent); background: #fdf5f0; }
   .drop-zone .icon { font-size: 1.6rem; margin-bottom: 0.4rem; display: block; }
-  .drop-zone p { font-size: 0.72rem; color: var(--ink2); line-height: 1.5; }
+  .drop-zone p { font-size: 0.72rem; color: var(--text-muted); line-height: 1.5; }
   .drop-zone input { display: none; }
   .thumb-row { display: flex; gap: 8px; align-items: center; padding: 0.5rem; background: var(--bg); border-radius: 6px; border: 1px solid var(--border); }
   .thumb-row img { width: 48px; height: 48px; object-fit: cover; border-radius: 4px; }
-  .thumb-info { font-size: 0.68rem; color: var(--ink2); flex: 1; min-width: 0; }
-  .thumb-info strong { display: block; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.72rem; }
+  .thumb-info { font-size: 0.68rem; color: var(--text-muted); flex: 1; min-width: 0; }
+  .thumb-info strong { display: block; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.72rem; }
   .control-row { display: flex; flex-direction: column; gap: 0.35rem; }
-  .control-row label { font-size: 0.7rem; color: var(--ink2); display: flex; justify-content: space-between; align-items: center; }
-  .control-row label span { font-size: 0.7rem; color: var(--ink); font-weight: 500; }
+  .control-row label { font-size: 0.7rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
+  .control-row label span { font-size: 0.7rem; color: var(--text); font-weight: 500; }
   input[type=range] { width: 100%; accent-color: var(--accent); height: 20px; cursor: pointer; }
-  input[type=number] { width: 100%; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.6rem; height: 20px; cursor: pointer; }
-  select { width: 100%; padding: 0.4rem 0.5rem; font-family: var(--mono); font-size: 0.72rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--ink); cursor: pointer; }
+  input[type=number] { width: 100%; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.6rem; height: 20px; cursor: pointer; }
+  select { width: 100%; padding: 0.4rem 0.5rem; font-family: var(--mono); font-size: 0.72rem; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); cursor: pointer; }
   .color-palette { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 0.25rem; }
   .swatch { width: 26px; height: 26px; border-radius: 4px; border: 1.5px solid rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.1s; }
   .swatch:hover { transform: scale(1.15); }
-  .btn { width: 100%; padding: 0.65rem 1rem; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--ink); color: var(--bg); cursor: pointer; transition: all 0.15s; text-transform: uppercase; }
+  .btn { width: 100%; padding: 0.65rem 1rem; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.04em; border: 1.5px solid var(--text); border-radius: 4px; background: var(--text); color: var(--bg); cursor: pointer; transition: all 0.15s; text-transform: uppercase; }
   .btn:hover { background: var(--accent); border-color: var(--accent); }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn.secondary { background: transparent; color: var(--ink); }
-  .btn.secondary:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn.secondary { background: transparent; color: var(--text); }
+  .btn.secondary:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
   .main { display: flex; flex-direction: column; overflow: hidden; }
   .tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--panel); padding: 0 1.5rem; }
-  .tab { padding: 0.7rem 1rem; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink3); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--mono); }
-  .tab:hover { color: var(--ink); }
+  .tab { padding: 0.7rem 1rem; font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; background: none; border-top: none; border-left: none; border-right: none; font-family: var(--mono); }
+  .tab:hover { color: var(--text); }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
   .canvas-wrap { flex: 1; overflow: auto; display: flex; align-items: flex-start; justify-content: center; padding: 2rem; background: var(--bg); }
   .canvas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1000px; width: 100%; }
   .canvas-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-  .canvas-card-label { padding: 0.5rem 0.75rem; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink3); border-bottom: 1px solid var(--border); }
+  .canvas-card-label { padding: 0.5rem 0.75rem; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); }
   canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
   .pane { flex: 1; overflow: auto; padding: 1.5rem 2rem; display: none; }
   .pane.visible { display: block; }
   .gcode-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
   .gcode-stats { display: flex; gap: 1.5rem; }
-  .stat { font-size: 0.7rem; color: var(--ink2); }
-  .stat strong { color: var(--ink); display: block; font-size: 1rem; }
+  .stat { font-size: 0.7rem; color: var(--text-muted); }
+  .stat strong { color: var(--text); display: block; font-size: 1rem; }
   .gcode-viewer {
     background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
     font-family: var(--mono); font-size: 0.7rem; line-height: 1.6;
@@ -68,39 +110,39 @@
   .gcode-linenos {
     flex-shrink: 0; width:72px; padding: 0.75rem 0.5rem 0.75rem 0.75rem;
     background: var(--bg); border-right: 1px solid var(--border);
-    color: var(--ink3); text-align: right; overflow: hidden;
+    color: var(--text-dim); text-align: right; overflow: hidden;
     user-select: none; white-space: pre; line-height: 1.6; font-size: 0.7rem;
   }
   .gcode-code {
     flex: 1; padding: 0.75rem 1rem; overflow: auto;
-    color: var(--ink2); white-space: pre; line-height: 1.6; font-size: 0.7rem;
+    color: var(--text-muted); white-space: pre; line-height: 1.6; font-size: 0.7rem;
   }
   .gcode-resize-hint {
-    font-size: 0.6rem; color: var(--ink3); text-align: right;
+    font-size: 0.6rem; color: var(--text-dim); text-align: right;
     padding: 2px 8px; border-top: 1px solid var(--border);
     background: var(--bg); flex-shrink: 0; letter-spacing: 0.04em;
   }
   .progress-bar { height: 2px; background: var(--border); overflow: hidden; }
   .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.1s; }
-  .status-bar { padding: 0.4rem 1rem; font-size: 0.65rem; color: var(--ink3); border-top: 1px solid var(--border); background: var(--panel); letter-spacing: 0.04em; }
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; height: 300px; color: var(--ink3); grid-column: 1 / -1; }
+  .status-bar { padding: 0.4rem 1rem; font-size: 0.65rem; color: var(--text-dim); border-top: 1px solid var(--border); background: var(--panel); letter-spacing: 0.04em; }
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; height: 300px; color: var(--text-dim); grid-column: 1 / -1; }
   .empty-state .big { font-size: 3rem; }
   .empty-state p { font-size: 0.8rem; }
   .color-by-layer { display: flex; flex-direction: column; gap: 4px; margin-top: 0.5rem; }
-  .layer-row { display: flex; align-items: center; gap: 8px; font-size: 0.68rem; color: var(--ink2); }
+  .layer-row { display: flex; align-items: center; gap: 8px; font-size: 0.68rem; color: var(--text-muted); }
   .layer-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15); flex-shrink: 0; }
-  .layer-count { margin-left: auto; color: var(--ink3); }
+  .layer-count { margin-left: auto; color: var(--text-dim); }
 
   /* Settings tab */
   .settings-wrap { max-width: 800px; display: flex; flex-direction: column; gap: 1.75rem; }
   .settings-block { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-  .settings-block-head { padding: 0.55rem 1rem; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); background: var(--bg); border-bottom: 1px solid var(--border); }
+  .settings-block-head { padding: 0.55rem 1rem; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); background: var(--bg); border-bottom: 1px solid var(--border); }
   .settings-block-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 1.1rem; }
   .tmpl-field { display: flex; flex-direction: column; gap: 0.3rem; }
-  .tmpl-field > label { font-size: 0.7rem; color: var(--ink); font-weight: 500; }
-  .tmpl-field .hint { font-size: 0.62rem; color: var(--ink3); line-height: 1.5; }
-  .tmpl-field .hint code { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 0 3px; font-size: 0.62rem; color: var(--ink2); }
-  textarea { width: 100%; font-family: var(--mono); font-size: 0.7rem; line-height: 1.6; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.6rem; resize: vertical; }
+  .tmpl-field > label { font-size: 0.7rem; color: var(--text); font-weight: 500; }
+  .tmpl-field .hint { font-size: 0.62rem; color: var(--text-dim); line-height: 1.5; }
+  .tmpl-field .hint code { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 0 3px; font-size: 0.62rem; color: var(--text-muted); }
+  textarea { width: 100%; font-family: var(--mono); font-size: 0.7rem; line-height: 1.6; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem 0.6rem; resize: vertical; }
   textarea:focus { outline: none; border-color: var(--accent); }
 
   /* Per-color settings */
@@ -109,17 +151,17 @@
   .color-cfg-row:last-child { border-bottom: none; }
   .color-cfg-row.is-disabled { opacity: 0.38; }
   .cfg-swatch { width: 18px; height: 18px; border-radius: 3px; border: 1px solid rgba(0,0,0,0.15); margin-top: 2px; }
-  .cfg-num { font-size: 0.65rem; color: var(--ink3); padding-top: 2px; }
+  .cfg-num { font-size: 0.65rem; color: var(--text-dim); padding-top: 2px; }
   .cfg-body { display: flex; flex-direction: column; gap: 0.45rem; }
-  .cfg-check-row { display: flex; align-items: center; gap: 7px; font-size: 0.7rem; color: var(--ink2); }
+  .cfg-check-row { display: flex; align-items: center; gap: 7px; font-size: 0.7rem; color: var(--text-muted); }
   .cfg-check-row input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
   .cfg-dip-fields { padding-left: 20px; display: flex; flex-direction: column; gap: 0.35rem; }
-  .cfg-coord-row { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--ink2); }
-  .cfg-coord-row span { color: var(--ink3); min-width: 10px; }
-  .cfg-coord-row input[type=number] { font-family: var(--mono); font-size: 0.68rem; color: var(--ink); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.22rem 0.4rem; width: 68px; }
+  .cfg-coord-row { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--text-muted); }
+  .cfg-coord-row span { color: var(--text-dim); min-width: 10px; }
+  .cfg-coord-row input[type=number] { font-family: var(--mono); font-size: 0.68rem; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.22rem 0.4rem; width: 68px; }
   .cfg-coord-row input[type=number]:focus { outline: none; border-color: var(--accent); }
-  .cfg-count { font-size: 0.63rem; color: var(--ink3); padding-top: 2px; text-align: right; white-space: nowrap; }
-  .no-cfg-msg { padding: 1rem 1.25rem; font-size: 0.75rem; color: var(--ink3); }
+  .cfg-count { font-size: 0.63rem; color: var(--text-dim); padding-top: 2px; text-align: right; white-space: nowrap; }
+  .no-cfg-msg { padding: 1rem 1.25rem; font-size: 0.75rem; color: var(--text-dim); }
 
   input::-webkit-outer-spin-button,
   input::-webkit-inner-spin-button {
@@ -136,7 +178,7 @@
 <body>
 
 <header>
-  <h1>Plotter Painter</h1>
+  <h1>PAINTWORK</h1>
   <span>image → brushstrokes → g-code</span>
 </header>
 
@@ -285,7 +327,7 @@
           <div class="settings-block-head" style="display:flex;align-items:center;justify-content:space-between;">
             <span>G-code templates</span>
             <div style="display:flex;gap:6px;align-items:center;">
-              <span id="saveStatus" style="font-size:0.6rem;color:var(--ink3);letter-spacing:0.04em;"></span>
+              <span id="saveStatus" style="font-size:0.6rem;color:var(--text-dim);letter-spacing:0.04em;"></span>
               <input type="file" id="settingsFileInput" accept=".json" style="display:none;">
               <button class="btn secondary" id="loadSettingsBtn" style="width:auto;padding:0.25rem 0.6rem;font-size:0.65rem;border-width:1px;">Load</button>
               <button class="btn secondary" id="saveSettingsBtn" style="width:auto;padding:0.25rem 0.6rem;font-size:0.65rem;border-width:1px;">Save</button>
@@ -511,9 +553,9 @@ function renderColorCfgUI() {
             <span>Z</span><input type="number" id="cfdipz-${i}" value="${cs.dipZ}" step="0.1">
           </div>
           <div class="cfg-coord-row">
-            <span style="color:var(--ink2);min-width:auto;margin-right:4px;">Dip every</span>
+            <span style="color:var(--text-muted);min-width:auto;margin-right:4px;">Dip every</span>
             <input type="number" id="cfdipev-${i}" value="${cs.dipEvery}" min="1" step="1" style="width:52px;">
-            <span style="color:var(--ink3);font-size:0.65rem;">strokes</span>
+            <span style="color:var(--text-dim);font-size:0.65rem;">strokes</span>
           </div>
         </div>
       </div>
@@ -912,7 +954,7 @@ let pendingColorSettings = null; // applied after generate() if counts match
 function flashSaveStatus(msg, isError) {
   const el = $('saveStatus');
   el.textContent = msg;
-  el.style.color = isError ? '#c00' : 'var(--ink3)';
+  el.style.color = isError ? '#c00' : 'var(--text-dim)';
   clearTimeout(el._t);
   el._t = setTimeout(() => { el.textContent = ''; }, 2200);
 }

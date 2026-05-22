@@ -1,52 +1,563 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PlotterPainter Tools</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            text-align: center;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-        }
-        a {
-            display: inline-block;
-            margin: 10px;
-            padding: 12px 24px;
-            background-color: #667eea;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        a:hover {
-            background-color: #764ba2;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plotting Tools</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@300;400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:           #0f0f0f;
+  --surface:      #1a1a1a;
+  --surface2:     #222;
+  --border:       #2e2e2e;
+  --border-hi:    #444;
+  --accent:       #c8f542;
+  --accent-glow:  rgba(200,245,66,0.12);
+  --accent-dim:   #8ab02e;
+  --text:         #e8e8e0;
+  --text-muted:   #666;
+  --text-dim:     #333;
+  --mono:         'IBM Plex Mono', monospace;
+  --sans:         'IBM Plex Sans', sans-serif;
+  --r:            6px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono);
+  min-height: 100vh;
+  /* dot-grid background */
+  background-image: radial-gradient(circle, #2a2a2a 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-attachment: fixed;
+}
+
+/* ── top bar (matches app header) ── */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(15,15,15,0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.topbar-logo {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.topbar-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+}
+
+.topbar-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.topbar-spacer { flex: 1; }
+
+.topbar-meta {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+/* ── hero ── */
+.hero {
+  padding: 72px 48px 56px;
+  max-width: 1100px;
+  margin: 0 auto;
+  opacity: 0;
+  animation: rise 0.55s cubic-bezier(0.22,1,0.36,1) 0.05s forwards;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.hero-eyebrow::before {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: var(--accent);
+}
+
+.hero-eyebrow span {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+}
+
+.hero h1 {
+  font-size: clamp(44px, 6.5vw, 80px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 0.95;
+  color: var(--text);
+  margin-bottom: 24px;
+}
+
+.hero h1 i {
+  font-style: italic;
+  font-weight: 300;
+  color: var(--text-muted);
+}
+
+.hero-desc {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 15px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  max-width: 520px;
+}
+
+/* ── tool count badge ── */
+.hero-stat-row {
+  margin-top: 40px;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  width: fit-content;
+}
+
+.hero-stat {
+  padding: 10px 20px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hero-stat:last-child { border-right: none; }
+
+.hero-stat-val {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-stat-key {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ── section ── */
+.section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 48px 80px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: rise 0.4s ease 0.25s forwards;
+}
+
+.section-head-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.section-head-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── tool grid ── */
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+/* ── tool card ── */
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  cursor: pointer;
+  opacity: 0;
+  animation: rise 0.4s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+
+.tool-card:hover {
+  border-color: var(--border-hi);
+  background: var(--surface2);
+  transform: translateY(-2px);
+}
+
+.tool-card:hover .card-glow { opacity: 1; }
+.tool-card:hover .card-num  { color: var(--accent); }
+.tool-card:hover .card-arrow { transform: translate(2px,-2px); opacity: 1; }
+.tool-card:hover .card-title { color: var(--accent); }
+
+/* accent glow top-left corner */
+.card-glow {
+  position: absolute;
+  top: 0; left: 0;
+  width: 180px; height: 180px;
+  background: radial-gradient(ellipse at top left, var(--accent-glow), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.card-num {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  transition: color 0.15s;
+}
+
+.card-arrow {
+  font-size: 14px;
+  color: var(--text-dim);
+  opacity: 0.6;
+  transition: transform 0.2s ease, opacity 0.15s;
+  line-height: 1;
+}
+
+/* icon area */
+.card-icon-wrap {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.card-icon-wrap svg { width: 24px; height: 24px; }
+
+.card-title {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.2;
+  transition: color 0.15s;
+}
+
+.card-desc {
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  flex: 1;
+  margin-bottom: 22px;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.tag {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 3px 7px;
+}
+
+/* ── coming soon card variant ── */
+.tool-card.soon {
+  opacity: 0;
+  animation: rise 0.4s cubic-bezier(0.22,1,0.36,1) forwards;
+  cursor: default;
+  pointer-events: none;
+}
+
+.tool-card.soon .card-title { color: var(--text-dim); }
+.tool-card.soon .card-desc  { color: var(--text-dim); }
+.tool-card.soon .card-icon-wrap { opacity: 0.35; }
+
+.soon-badge {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-dim);
+  border: 1px solid var(--accent-dim);
+  border-radius: 3px;
+  padding: 3px 8px;
+  width: fit-content;
+  margin-bottom: 22px;
+}
+
+/* ── footer ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  opacity: 0;
+  animation: rise 0.4s ease 0.8s forwards;
+}
+
+.footer-left {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.footer-right {
+  display: flex;
+  gap: 20px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.footer-right a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.12s;
+}
+
+.footer-right a:hover { color: var(--accent); }
+
+/* ── keyframes ── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* stagger cards */
+.tool-card:nth-child(1) { animation-delay: 0.30s; }
+.tool-card:nth-child(2) { animation-delay: 0.38s; }
+.tool-card:nth-child(3) { animation-delay: 0.46s; }
+.tool-card:nth-child(4) { animation-delay: 0.54s; }
+.tool-card:nth-child(5) { animation-delay: 0.62s; }
+.tool-card:nth-child(6) { animation-delay: 0.70s; }
+
+@media (max-width: 600px) {
+  .hero      { padding: 48px 24px 40px; }
+  .section   { padding: 0 24px 60px; }
+  .topbar    { padding: 0 20px; }
+  footer     { padding: 24px; flex-direction: column; gap: 12px; align-items: flex-start; }
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Plotter Tools</h1>
-        <nav>
-            <a href="tools/Plotter Painter.html">Tool 1</a>
-            <a href="tools/Halftone Dot Generator.html">Tool 2</a>
-        </nav>
+
+<!-- top bar -->
+<div class="topbar">
+  <span class="topbar-logo">PLOTTING TOOLS</span>
+  <div class="topbar-sep"></div>
+  <span class="topbar-sub">browser-based · no install</span>
+  <div class="topbar-spacer"></div>
+  <span class="topbar-meta" id="toolMeta">— tools</span>
+</div>
+
+<!-- hero -->
+<div class="hero">
+  <div class="hero-eyebrow"><span>open source · github pages</span></div>
+  <h1>Plot<br><i>Work</i></h1>
+  <p class="hero-desc">Single-file browser tools for pen plotter work — image processing, G-code generation, and path utilities. Everything runs client-side, nothing leaves your machine.</p>
+
+  <div class="hero-stat-row">
+    <div class="hero-stat">
+      <span class="hero-stat-val" id="liveCount">01</span>
+      <span class="hero-stat-key">Live tools</span>
     </div>
+    <div class="hero-stat">
+      <span class="hero-stat-val">100%</span>
+      <span class="hero-stat-key">Client-side</span>
+    </div>
+    <div class="hero-stat">
+      <span class="hero-stat-val">0</span>
+      <span class="hero-stat-key">Dependencies</span>
+    </div>
+  </div>
+</div>
+
+<!-- tools section -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-head-label">Tools</span>
+    <div class="section-head-line"></div>
+  </div>
+
+  <div class="tool-grid" id="toolGrid">
+
+    <!-- ── 01 Dotwork / Gcode ── -->
+    <a class="tool-card" href="tools/dotwork.html">
+      <div class="card-glow"></div>
+      <div class="card-header">
+        <span class="card-num">01</span>
+        <span class="card-arrow">↗</span>
+      </div>
+
+      <div class="card-icon-wrap">
+        <!-- stipple dots icon -->
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="5"  cy="5"  r="1.4" fill="#c8f542"/>
+          <circle cx="12" cy="4"  r="1.0" fill="#c8f542" opacity=".6"/>
+          <circle cx="19" cy="6"  r="1.2" fill="#c8f542" opacity=".8"/>
+          <circle cx="4"  cy="12" r="0.9" fill="#c8f542" opacity=".5"/>
+          <circle cx="9"  cy="11" r="1.6" fill="#c8f542"/>
+          <circle cx="16" cy="10" r="0.9" fill="#c8f542" opacity=".55"/>
+          <circle cx="20" cy="13" r="1.1" fill="#c8f542" opacity=".7"/>
+          <circle cx="6"  cy="19" r="0.8" fill="#c8f542" opacity=".45"/>
+          <circle cx="12" cy="18" r="1.4" fill="#c8f542" opacity=".85"/>
+          <circle cx="19" cy="20" r="1.1" fill="#c8f542" opacity=".65"/>
+        </svg>
+      </div>
+
+      <div class="card-title">Dotwork</div>
+      <p class="card-desc">Convert any image into a stipple dot pattern layered by color. Control dot density per color band, preview live, and export travel-sorted G-code with custom start/end routines.</p>
+      <div class="card-tags">
+        <span class="tag">Image → G-code</span>
+        <span class="tag">Stipple</span>
+        <span class="tag">Color quantize</span>
+        <span class="tag">Multi-layer</span>
+      </div>
+    </a>
+
+    <a class="tool-card" href="tools/paintwork.html">
+      <div class="card-glow"></div>
+      <div class="card-header">
+        <span class="card-num">02</span>
+        <span class="card-arrow">↗</span>
+      </div>
+
+      <div class="card-icon-wrap">
+        <!--  hatch icon -->
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="#666" stroke-width="1.2"/>
+          <line x1="7"  y1="3"  x2="3"  y2="7"  stroke="#c8f542" stroke-width="0.9"/>
+          <line x1="11" y1="3"  x2="3"  y2="11" stroke="#c8f542" stroke-width="0.9"/>
+          <line x1="15" y1="3"  x2="3"  y2="15" stroke="#c8f542" stroke-width="0.9"/>
+          <line x1="19" y1="3"  x2="3"  y2="19" stroke="#c8f542" stroke-width="0.9"/>
+          <line x1="21" y1="5"  x2="5"  y2="21" stroke="#c8f542" stroke-width="0.9"/>
+          <line x1="21" y1="9"  x2="9"  y2="21" stroke="#c8f542" stroke-width="0.9"/>
+          <line x1="21" y1="13" x2="13" y2="21" stroke="#c8f542" stroke-width="0.9"/>
+          <line x1="21" y1="17" x2="17" y2="21" stroke="#c8f542" stroke-width="0.9"/>
+        </svg>
+      </div>
+
+      <div class="card-title">Paintwork</div>
+      <p class="card-desc">Convert an image into a series of colors and paths that render to gcode. Control the density and placement of the paths and whether tool uses a physical palette for liquid medium.</p>
+      <div class="card-tags">
+        <span class="tag">Image → G-code</span>
+        <span class="tag">Brush</span>
+        <span class="tag">Color quantize</span>
+        <span class="tag">Color Block</span>
+      </div>
+    </a>
+
+    <!-- ── 03 SVG Path Optimizer (soon) ── -->
+    <div class="tool-card soon">
+      <div class="card-header">
+        <span class="card-num">02</span>
+      </div>
+
+      <div class="card-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M3 12 Q8 4 12 12 Q16 20 21 12" stroke="#666" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          <circle cx="3"  cy="12" r="1.5" fill="#666"/>
+          <circle cx="12" cy="12" r="1.5" fill="#666"/>
+          <circle cx="21" cy="12" r="1.5" fill="#666"/>
+        </svg>
+      </div>
+
+      <div class="card-title">Pathwork</div>
+      <div class="soon-badge">Coming soon</div>
+      <p class="card-desc">Create paths from SVG shapes and reorder them to minimise pen travel using a nearest-neighbour heuristic. Upload an SVG, preview the optimised route, download a plotter-ready file.</p>
+      <div class="card-tags">
+        <span class="tag">SVG</span>
+        <span class="tag">Path sort</span>
+        <span class="tag">Travel opt.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <span class="footer-left">plotting-tools · open source</span>
+  <div class="footer-right">
+    <a href="https://github.com/rilmar/PlotterPainter" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</footer>
+
+<script>
+  const live = document.querySelectorAll('#toolGrid a.tool-card').length;
+  document.getElementById('liveCount').textContent = String(live).padStart(2, '0');
+  document.getElementById('toolMeta').textContent = `${live} tool${live !== 1 ? 's' : ''} available`;
+</script>
+
 </body>
 </html>
