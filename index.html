@@ -77,12 +77,6 @@ body {
 
 .topbar-spacer { flex: 1; }
 
-.topbar-meta {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-}
-
 /* ── hero ── */
 .hero {
   padding: 72px 48px 56px;
@@ -136,43 +130,6 @@ body {
   color: var(--text-muted);
   line-height: 1.65;
   max-width: 520px;
-}
-
-/* ── tool count badge ── */
-.hero-stat-row {
-  margin-top: 40px;
-  display: flex;
-  align-items: center;
-  gap: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-  width: fit-content;
-}
-
-.hero-stat {
-  padding: 10px 20px;
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hero-stat:last-child { border-right: none; }
-
-.hero-stat-val {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.hero-stat-key {
-  font-size: 9px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-muted);
 }
 
 /* ── section ── */
@@ -418,29 +375,13 @@ footer {
   <div class="topbar-sep"></div>
   <span class="topbar-sub">browser-based · no install</span>
   <div class="topbar-spacer"></div>
-  <span class="topbar-meta" id="toolMeta">— tools</span>
 </div>
 
 <!-- hero -->
 <div class="hero">
-  <div class="hero-eyebrow"><span>open source · github pages</span></div>
+  <div class="hero-eyebrow"><span>open source</span></div>
   <h1>Plot<br><i>Work</i></h1>
   <p class="hero-desc">Single-file browser tools for pen plotter work — image processing, G-code generation, and path utilities. Everything runs client-side, nothing leaves your machine.</p>
-
-  <div class="hero-stat-row">
-    <div class="hero-stat">
-      <span class="hero-stat-val" id="liveCount">01</span>
-      <span class="hero-stat-key">Live tools</span>
-    </div>
-    <div class="hero-stat">
-      <span class="hero-stat-val">100%</span>
-      <span class="hero-stat-key">Client-side</span>
-    </div>
-    <div class="hero-stat">
-      <span class="hero-stat-val">0</span>
-      <span class="hero-stat-key">Dependencies</span>
-    </div>
-  </div>
 </div>
 
 <!-- tools section -->
@@ -547,7 +488,7 @@ footer {
 </div>
 
 <footer>
-  <span class="footer-left">plotting-tools · open source</span>
+  <span class="footer-left">plotting-tools</span>
   <div class="footer-right">
     <a href="https://github.com/rilmar/PlotterPainter" target="_blank" rel="noopener">GitHub ↗</a>
   </div>
