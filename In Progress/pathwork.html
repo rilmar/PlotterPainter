@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG Plotter · Plotting Tools</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300&family=IBM+Plex+Sans:wght@300;400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #0f0f0f;
+  --surface:    #1a1a1a;
+  --surface2:   #252525;
+  --border:     #2e2e2e;
+  --border-hi:  #444;
+  --accent:     #c8f542;
+  --accent-dim: #8ab02e;
+  --text:       #e8e8e0;
+  --text-muted: #777;
+  --text-dim:   #333;
+  --mono:       'IBM Plex Mono', monospace;
+  --sans:       'IBM Plex Sans', sans-serif;
+  --radius:     6px;
+}
+
+html, body { min-height: 100vh; }
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+/* ── Header ── */
+header {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(15,15,15,0.96);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+header h1 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-transform: uppercase;
+  font-family: var(--mono);
+}
+header span {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+/* ── Layout ── */
+.app {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  flex: 1;
+  min-height: 0;
+  height: calc(100vh - 52px);
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Section card ── */
+.section {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.section-head {
+  padding: 9px 14px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Drop zone ── */
+.drop-zone {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: var(--bg);
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(200,245,66,0.04);
+}
+.drop-zone .dz-icon { font-size: 26px; margin-bottom: 8px; display: block; opacity: 0.35; }
+.drop-zone p { font-size: 12px; color: var(--text-muted); line-height: 1.55; font-family: var(--sans); font-weight: 300; }
+.drop-zone strong { color: var(--text); }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+/* ── File info row ── */
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.file-row-icon { font-size: 18px; opacity: 0.5; flex-shrink: 0; }
+.file-row-info { flex: 1; min-width: 0; font-size: 11px; color: var(--text-muted); }
+.file-row-info strong { display: block; color: var(--text); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Field rows ── */
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.field-row label {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--mono);
+  white-space: nowrap;
+  min-width: 80px;
+}
+.field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field-pair .field-row label { min-width: 0; }
+
+/* ── Inputs ── */
+input[type=number], input[type=text] {
+  flex: 1;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  -moz-appearance: textfield;
+}
+input[type=number]:focus, input[type=text]:focus { border-color: var(--accent); }
+input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
+
+.val-badge {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+  min-width: 36px;
+  text-align: right;
+}
+
+textarea {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+textarea:focus { border-color: var(--accent); }
+
+select {
+  flex: 1;
+  width: 100%;
+  padding: 6px 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+select:focus { border-color: var(--accent); }
+
+/* ── Buttons ── */
+.btn {
+  padding: 8px 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #0f0f0f;
+  cursor: pointer;
+  transition: all 0.12s;
+  text-transform: uppercase;
+  width: 100%;
+}
+.btn:hover { background: #d4ff55; border-color: #d4ff55; }
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+.btn.ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+.btn.ghost:hover { color: var(--text); border-color: var(--border-hi); background: var(--surface2); }
+
+.btn-row { display: flex; gap: 8px; }
+.btn-row .btn { flex: 1; }
+
+/* ── Hint text ── */
+.hint { font-size: 10px; color: var(--text-dim); font-family: var(--mono); line-height: 1.5; }
+.hint code { color: var(--accent-dim); background: var(--surface2); border: 1px solid var(--border); border-radius: 3px; padding: 0 4px; font-size: 10px; }
+
+/* ── Progress & status ── */
+.progress-bar  { height: 2px; background: var(--border); overflow: hidden; flex-shrink: 0; }
+.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.2s; }
+
+.status-bar {
+  padding: 8px 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+.status-bar span { color: var(--accent); }
+
+/* ── Main view ── */
+.main { display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+.tab {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  border-top: none; border-left: none; border-right: none;
+  background: none;
+  font-family: var(--mono);
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── Preview pane ── */
+.preview-pane {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #111;
+  position: relative;
+}
+
+.preview-canvas-wrap {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.preview-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.preview-toolbar label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+
+#previewCanvas {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+.empty-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: center;
+  line-height: 2;
+}
+
+/* ── G-code pane ── */
+.gcode-pane {
+  flex: 1;
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+}
+.gcode-pane.visible { display: flex; }
+
+.gcode-stats-bar {
+  display: flex;
+  gap: 24px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.stat { font-size: 11px; color: var(--text-muted); }
+.stat strong { display: block; font-size: 18px; font-weight: 500; color: var(--text); letter-spacing: -0.02em; }
+.gcode-stats-bar .spacer { flex: 1; }
+
+.gcode-viewer {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.gcode-linenos {
+  flex-shrink: 0;
+  width: 58px;
+  padding: 10px 8px 10px 12px;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  color: var(--text-dim);
+  text-align: right;
+  overflow: hidden;
+  user-select: none;
+  white-space: pre;
+}
+.gcode-code {
+  flex: 1;
+  padding: 10px 14px;
+  overflow: auto;
+  color: var(--text-muted);
+  white-space: pre;
+}
+.gcode-code .gc-comment { color: var(--text-dim); }
+.gcode-code .gc-move    { color: var(--text); }
+.gcode-code .gc-special { color: var(--accent-dim); }
+
+/* ── Settings pane ── */
+.settings-pane {
+  flex: 1;
+  overflow-y: auto;
+  display: none;
+  padding: 24px 28px;
+  flex-direction: column;
+  gap: 18px;
+}
+.settings-pane.visible { display: flex; }
+
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ── Path layer list ── */
+.path-list { display: flex; flex-direction: column; }
+.path-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: background 0.1s;
+}
+.path-row:last-child { border-bottom: none; }
+.path-row:hover { background: var(--surface2); }
+.path-row input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+.path-row-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); }
+.path-row-count { color: var(--text-dim); font-size: 10px; letter-spacing: 0.06em; }
+.path-row.disabled { opacity: 0.4; }
+
+.no-paths-msg { padding: 14px; font-size: 11px; color: var(--text-dim); text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SVG Plotter</h1>
+  <span>svg → paths → g-code</span>
+</header>
+
+<div class="app">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-scroll">
+
+      <!-- 01 · File -->
+      <div class="section">
+        <div class="section-head">01 · SVG File</div>
+        <div class="section-body">
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept=".svg,image/svg+xml">
+            <span class="dz-icon">⬡</span>
+            <p><strong>Drop SVG here</strong><br>or click to browse</p>
+          </div>
+          <div class="file-row" id="fileRow" style="display:none">
+            <span class="file-row-icon">◈</span>
+            <div class="file-row-info">
+              <strong id="fileName">—</strong>
+              <span id="fileStats">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 02 · Plot area -->
+      <div class="section">
+        <div class="section-head">02 · Plot Area</div>
+        <div class="section-body">
+          <div class="field-pair">
+            <div class="field-row">
+              <label>Width mm</label>
+              <input type="number" id="plotW" value="200" min="1" max="5000">
+            </div>
+            <div class="field-row">
+              <label>Height mm</label>
+              <input type="number" id="plotH" value="150" min="1" max="5000">
+            </div>
+          </div>
+          <div class="field-pair">
+            <div class="field-row">
+              <label>X offset</label>
+              <input type="number" id="offsetX" value="0" step="0.1">
+            </div>
+            <div class="field-row">
+              <label>Y offset</label>
+              <input type="number" id="offsetY" value="0" step="0.1">
+            </div>
+          </div>
+          <div class="hint">Offset shifts the SVG from its auto-centred position. Positive X moves right, positive Y moves down.</div>
+          <div class="field-row">
+            <label>Scale</label>
+            <input type="range" id="scaleSlider" min="1" max="200" value="100" step="1">
+            <span class="val-badge" id="scaleVal">100%</span>
+          </div>
+          <div class="field-row">
+            <label>Fit mode</label>
+            <select id="fitMode">
+              <option value="fit">Fit (preserve aspect)</option>
+              <option value="fill">Fill (stretch to bounds)</option>
+              <option value="none">None (use SVG units)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 03 · Pen -->
+      <div class="section">
+        <div class="section-head">03 · Pen / Z Axis</div>
+        <div class="section-body">
+          <div class="field-row">
+            <label>Feed mm/min</label>
+            <input type="number" id="feedRate" value="3000" min="1" max="20000">
+          </div>
+          <div class="field-row">
+            <label>Z pen down</label>
+            <input type="number" id="zDown" value="-1" step="0.1" min="-50" max="50">
+          </div>
+          <div class="field-row">
+            <label>Z pen up</label>
+            <input type="number" id="zUp" value="5" step="0.1" min="-50" max="50">
+          </div>
+          <div class="field-row">
+            <label>Z travel</label>
+            <input type="number" id="zTravel" value="10" step="0.1" min="-50" max="50">
+          </div>
+          <div class="hint">Z travel is the safe height used when moving between paths.</div>
+        </div>
+      </div>
+
+      <!-- 04 · Paths -->
+      <div class="section">
+        <div class="section-head">
+          04 · Paths
+          <span id="pathCountBadge" style="color:var(--accent-dim);font-size:10px"></span>
+        </div>
+        <div id="pathListWrap">
+          <div class="no-paths-msg">Load an SVG to see paths</div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="btn-row">
+        <button class="btn" id="generateBtn" disabled>Generate G-code</button>
+        <button class="btn ghost" id="exportBtn" disabled>Export</button>
+      </div>
+
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="status-bar" id="statusBar">Ready — load an SVG to begin</div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <main class="main">
+    <div class="tabs">
+      <button class="tab active" data-tab="preview">Preview</button>
+      <button class="tab" data-tab="gcode">G-code</button>
+      <button class="tab" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-pane" id="previewPane">
+      <div class="preview-toolbar">
+        <label>View:</label>
+        <button class="btn ghost" id="viewSVG"    style="width:auto;padding:4px 12px;font-size:11px" disabled>SVG</button>
+        <button class="btn ghost" id="viewPaths"  style="width:auto;padding:4px 12px;font-size:11px" disabled>Paths</button>
+        <button class="btn ghost" id="viewTravel" style="width:auto;padding:4px 12px;font-size:11px" disabled>Toolpath</button>
+      </div>
+      <div class="preview-canvas-wrap" id="previewWrap">
+        <div class="empty-preview" id="emptyPreview">◌ ◌ ◌<br>load an SVG to begin</div>
+        <canvas id="previewCanvas" style="display:none"></canvas>
+      </div>
+    </div>
+
+    <!-- G-code -->
+    <div class="gcode-pane" id="gcodePane">
+      <div class="gcode-stats-bar" id="gcodeStatsBar">
+        <span style="font-size:11px;color:var(--text-dim)">Generate G-code to see output</span>
+      </div>
+      <div class="gcode-viewer">
+        <div class="gcode-linenos" id="gcodeLinenos"></div>
+        <div class="gcode-code"   id="gcodeDisplay"></div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-pane" id="settingsPane">
+
+      <div class="settings-grid">
+
+        <div class="section">
+          <div class="section-head">Start G-code</div>
+          <div class="section-body">
+            <div class="hint">Runs once at the beginning of the file.</div>
+            <textarea id="startGcode" rows="7" spellcheck="false">G21 ; mm units
+G90 ; absolute positioning
+G28 ; home all axes
+G1 Z{{Z_TRAVEL}} F{{FEED}} ; safe height</textarea>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">End G-code</div>
+          <div class="section-body">
+            <div class="hint">Runs once at the end of the file.</div>
+            <textarea id="endGcode" rows="7" spellcheck="false">G1 Z{{Z_TRAVEL}} F{{FEED}} ; lift
+G28 X Y ; home XY
+M84 ; disable motors</textarea>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">Pen Down G-code</div>
+          <div class="section-body">
+            <div class="hint">Runs before each path stroke begins.<br>Variables: <code>{{Z_DOWN}}</code> <code>{{Z_UP}}</code> <code>{{Z_TRAVEL}}</code> <code>{{FEED}}</code></div>
+            <textarea id="penDownGcode" rows="7" spellcheck="false">G1 Z{{Z_DOWN}} F{{FEED}}</textarea>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">Pen Up G-code</div>
+          <div class="section-body">
+            <div class="hint">Runs after each path stroke ends.<br>Variables: <code>{{Z_DOWN}}</code> <code>{{Z_UP}}</code> <code>{{Z_TRAVEL}}</code> <code>{{FEED}}</code></div>
+            <textarea id="penUpGcode" rows="7" spellcheck="false">G1 Z{{Z_UP}} F{{FEED}}</textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="section">
+        <div class="section-head">G-code Options</div>
+        <div class="section-body" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="field-row">
+            <label>Precision</label>
+            <input type="number" id="precision" value="3" min="1" max="6" style="width:60px;flex:none">
+            <span style="font-size:11px;color:var(--text-muted)">decimals</span>
+          </div>
+          <div class="field-row">
+            <label>Comments</label>
+            <select id="commentStyle">
+              <option value="semicolon" selected>; semicolon</option>
+              <option value="paren">( parens )</option>
+              <option value="none">none</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label>Sort paths</label>
+            <select id="sortPaths">
+              <option value="none">document order</option>
+              <option value="nearest">nearest-neighbour</option>
+              <option value="yx">top-to-bottom (Y→X)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label>Curve step</label>
+            <input type="number" id="curveStep" value="1" min="0.1" max="20" step="0.1" style="width:70px;flex:none">
+            <span style="font-size:11px;color:var(--text-muted)">mm</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="max-width:340px">
+        <button class="btn" onclick="saveSettings()">Save Settings</button>
+        <button class="btn ghost" onclick="resetSettings()">Reset</button>
+      </div>
+
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// Utilities
+// ─────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function setStatus(msg) { $('statusBar').innerHTML = msg; }
+function setStatusKV(pairs) {
+  $('statusBar').innerHTML = pairs.map(([k,v]) => `${k}: <span>${v}</span>`).join(' &nbsp;·&nbsp; ');
+}
+function setProgress(p) { $('progressFill').style.width = (p * 100) + '%'; }
+
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+let svgDoc = null;          // parsed SVG DOM
+let svgFilename = '';
+let extractedPaths = [];    // [{id, label, d, enabled, pointCount}]
+let gcodeLines = [];
+let currentView = 'svg';
+
+// ─────────────────────────────────────────────
+// Tab switching
+// ─────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const id = tab.dataset.tab;
+    $('previewPane').style.display  = id === 'preview'  ? 'flex' : 'none';
+    $('gcodePane').classList.toggle('visible', id === 'gcode');
+    $('settingsPane').classList.toggle('visible', id === 'settings');
+  });
+});
+
+// ─────────────────────────────────────────────
+// Settings persistence
+// ─────────────────────────────────────────────
+const DEFAULTS = {
+  startGcode:   'G21 ; mm units\nG90 ; absolute positioning\nG28 ; home all axes\nG1 Z{{Z_TRAVEL}} F{{FEED}} ; safe height',
+  endGcode:     'G1 Z{{Z_TRAVEL}} F{{FEED}} ; lift\nG28 X Y ; home XY\nM84 ; disable motors',
+  penDownGcode: 'G1 Z{{Z_DOWN}} F{{FEED}}',
+  penUpGcode:   'G1 Z{{Z_UP}} F{{FEED}}',
+  precision: '3', commentStyle: 'semicolon', sortPaths: 'none', curveStep: '1'
+};
+
+function loadSettings() {
+  const s = JSON.parse(localStorage.getItem('svgplotter_settings') || '{}');
+  $('startGcode').value   = s.startGcode   ?? DEFAULTS.startGcode;
+  $('endGcode').value     = s.endGcode     ?? DEFAULTS.endGcode;
+  $('penDownGcode').value = s.penDownGcode ?? DEFAULTS.penDownGcode;
+  $('penUpGcode').value   = s.penUpGcode   ?? DEFAULTS.penUpGcode;
+  $('precision').value    = s.precision    ?? DEFAULTS.precision;
+  $('commentStyle').value = s.commentStyle ?? DEFAULTS.commentStyle;
+  $('sortPaths').value    = s.sortPaths    ?? DEFAULTS.sortPaths;
+  $('curveStep').value    = s.curveStep    ?? DEFAULTS.curveStep;
+}
+
+function saveSettings() {
+  localStorage.setItem('svgplotter_settings', JSON.stringify({
+    startGcode:   $('startGcode').value,
+    endGcode:     $('endGcode').value,
+    penDownGcode: $('penDownGcode').value,
+    penUpGcode:   $('penUpGcode').value,
+    precision:    $('precision').value,
+    commentStyle: $('commentStyle').value,
+    sortPaths:    $('sortPaths').value,
+    curveStep:    $('curveStep').value,
+  }));
+  setStatus('Settings saved ✓');
+  setTimeout(() => setStatus('Ready'), 1800);
+}
+
+function resetSettings() {
+  if (!confirm('Reset all settings to defaults?')) return;
+  localStorage.removeItem('svgplotter_settings');
+  loadSettings();
+}
+
+function applyVars(str, vars) {
+  return str.replace(/\{\{(\w+)\}\}/g, (_, k) => k in vars ? vars[k] : `{{${k}}}`);
+}
+
+function makeComment(text, style) {
+  if (style === 'none') return null;
+  if (style === 'paren') return `(${text})`;
+  return `; ${text}`;
+}
+
+loadSettings();
+
+// ─────────────────────────────────────────────
+// Slider readout
+// ─────────────────────────────────────────────
+$('scaleSlider').addEventListener('input', () => {
+  $('scaleVal').textContent = $('scaleSlider').value + '%';
+  if (extractedPaths.length) redrawPreview();
+});
+
+// ─────────────────────────────────────────────
+// File loading
+// ─────────────────────────────────────────────
+const dropZone = $('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+$('fileInput').addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  if (!file.name.toLowerCase().endsWith('.svg') && file.type !== 'image/svg+xml') {
+    setStatus('Error: please load an SVG file');
+    return;
+  }
+  svgFilename = file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parser = new DOMParser();
+      svgDoc = parser.parseFromString(e.target.result, 'image/svg+xml');
+      const err = svgDoc.querySelector('parsererror');
+      if (err) { setStatus('Error: invalid SVG'); return; }
+      processSVG();
+    } catch(ex) {
+      setStatus('Error parsing SVG: ' + ex.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─────────────────────────────────────────────
+// SVG processing — extract all drawable elements
+// ─────────────────────────────────────────────
+function processSVG() {
+  setStatus('Parsing SVG…');
+  setProgress(0.1);
+
+  extractedPaths = [];
+  const svg = svgDoc.documentElement;
+
+  // Gather all elements that produce paths
+  const selector = 'path, line, polyline, polygon, rect, circle, ellipse';
+  const elements = svg.querySelectorAll(selector);
+
+  let idx = 0;
+  elements.forEach(el => {
+    const tag = el.tagName.toLowerCase();
+    const id = el.id || `${tag}-${idx}`;
+    const label = el.id ? `#${el.id}` : `<${tag}> ${idx + 1}`;
+    let d = null;
+
+    try {
+      switch (tag) {
+        case 'path':     d = el.getAttribute('d'); break;
+        case 'line':     d = lineToD(el); break;
+        case 'polyline': d = polyToD(el, false); break;
+        case 'polygon':  d = polyToD(el, true); break;
+        case 'rect':     d = rectToD(el); break;
+        case 'circle':   d = circleToD(el); break;
+        case 'ellipse':  d = ellipseToD(el); break;
+      }
+    } catch(ex) { d = null; }
+
+    if (d && d.trim()) {
+      extractedPaths.push({ id, label, tag, d, enabled: true, element: el });
+    }
+    idx++;
+  });
+
+  // File info
+  const vb = svg.getAttribute('viewBox');
+  const w = svg.getAttribute('width') || (vb ? vb.split(/[\s,]+/)[2] : '?');
+  const h = svg.getAttribute('height') || (vb ? vb.split(/[\s,]+/)[3] : '?');
+  $('fileName').textContent = svgFilename;
+  $('fileStats').textContent = `${extractedPaths.length} paths · ${w}×${h}`;
+  $('fileRow').style.display = 'flex';
+
+  buildPathList();
+  $('generateBtn').disabled = false;
+  $('viewSVG').disabled = false;
+  $('viewPaths').disabled = false;
+
+  setProgress(0.6);
+  redrawPreview();
+  setProgress(1);
+  setStatusKV([['paths', extractedPaths.length], ['file', svgFilename]]);
+  setTimeout(() => setProgress(0), 400);
+}
+
+// ─────────────────────────────────────────────
+// Shape → d string converters
+// ─────────────────────────────────────────────
+function lineToD(el) {
+  const x1 = el.getAttribute('x1')||0, y1 = el.getAttribute('y1')||0;
+  const x2 = el.getAttribute('x2')||0, y2 = el.getAttribute('y2')||0;
+  return `M${x1},${y1} L${x2},${y2}`;
+}
+
+function polyToD(el, close) {
+  const pts = (el.getAttribute('points')||'').trim().split(/[\s,]+/).filter(Boolean);
+  if (pts.length < 2) return null;
+  let d = `M${pts[0]},${pts[1]}`;
+  for (let i = 2; i < pts.length; i += 2) d += ` L${pts[i]},${pts[i+1]}`;
+  if (close) d += ' Z';
+  return d;
+}
+
+function rectToD(el) {
+  const x = parseFloat(el.getAttribute('x')||0);
+  const y = parseFloat(el.getAttribute('y')||0);
+  const w = parseFloat(el.getAttribute('width')||0);
+  const h = parseFloat(el.getAttribute('height')||0);
+  const rx = parseFloat(el.getAttribute('rx')||el.getAttribute('ry')||0);
+  if (rx <= 0) return `M${x},${y} L${x+w},${y} L${x+w},${y+h} L${x},${y+h} Z`;
+  const r = Math.min(rx, w/2, h/2);
+  return `M${x+r},${y} L${x+w-r},${y} Q${x+w},${y} ${x+w},${y+r} L${x+w},${y+h-r} Q${x+w},${y+h} ${x+w-r},${y+h} L${x+r},${y+h} Q${x},${y+h} ${x},${y+h-r} L${x},${y+r} Q${x},${y} ${x+r},${y} Z`;
+}
+
+function circleToD(el) {
+  const cx = parseFloat(el.getAttribute('cx')||0);
+  const cy = parseFloat(el.getAttribute('cy')||0);
+  const r  = parseFloat(el.getAttribute('r')||0);
+  return `M${cx-r},${cy} A${r},${r} 0 1,0 ${cx+r},${cy} A${r},${r} 0 1,0 ${cx-r},${cy} Z`;
+}
+
+function ellipseToD(el) {
+  const cx = parseFloat(el.getAttribute('cx')||0);
+  const cy = parseFloat(el.getAttribute('cy')||0);
+  const rx = parseFloat(el.getAttribute('rx')||0);
+  const ry = parseFloat(el.getAttribute('ry')||0);
+  return `M${cx-rx},${cy} A${rx},${ry} 0 1,0 ${cx+rx},${cy} A${rx},${ry} 0 1,0 ${cx-rx},${cy} Z`;
+}
+
+// ─────────────────────────────────────────────
+// Path list UI
+// ─────────────────────────────────────────────
+function buildPathList() {
+  const wrap = $('pathListWrap');
+  if (!extractedPaths.length) {
+    wrap.innerHTML = '<div class="no-paths-msg">No drawable paths found in this SVG</div>';
+    $('pathCountBadge').textContent = '';
+    return;
+  }
+  $('pathCountBadge').textContent = `${extractedPaths.length} paths`;
+
+  const list = document.createElement('div');
+  list.className = 'path-list';
+
+  extractedPaths.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'path-row';
+    row.id = `pr-${i}`;
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = p.enabled;
+    cb.addEventListener('change', () => {
+      p.enabled = cb.checked;
+      row.classList.toggle('disabled', !p.enabled);
+    });
+
+    const lbl = document.createElement('span');
+    lbl.className = 'path-row-label';
+    lbl.textContent = p.label;
+    lbl.title = p.d.slice(0, 60) + (p.d.length > 60 ? '…' : '');
+
+    const cnt = document.createElement('span');
+    cnt.className = 'path-row-count';
+    cnt.textContent = p.tag;
+
+    row.appendChild(cb);
+    row.appendChild(lbl);
+    row.appendChild(cnt);
+    list.appendChild(row);
+  });
+
+  wrap.innerHTML = '';
+  wrap.appendChild(list);
+}
+
+// ─────────────────────────────────────────────
+// Preview rendering
+// ─────────────────────────────────────────────
+$('viewSVG').addEventListener('click',    () => { setView('svg');    redrawPreview(); });
+$('viewPaths').addEventListener('click',  () => { setView('paths');  redrawPreview(); });
+$('viewTravel').addEventListener('click', () => { setView('travel'); redrawPreview(); });
+
+function setView(v) {
+  currentView = v;
+  ['viewSVG','viewPaths','viewTravel'].forEach(id => {
+    const btn = $(id);
+    const active = id === 'view' + v.charAt(0).toUpperCase() + v.slice(1);
+    btn.classList.toggle('btn', false);
+    btn.classList.add(active ? 'btn' : 'btn');
+    btn.style.borderColor = active ? 'var(--accent)' : 'var(--border)';
+    btn.style.color = active ? 'var(--accent)' : 'var(--text-muted)';
+    btn.style.background = 'transparent';
+  });
+}
+
+function getSVGViewBox() {
+  if (!svgDoc) return { x:0, y:0, w:100, h:100 };
+  const svg = svgDoc.documentElement;
+  const vb = svg.getAttribute('viewBox');
+  if (vb) {
+    const parts = vb.trim().split(/[\s,]+/).map(Number);
+    return { x: parts[0]||0, y: parts[1]||0, w: parts[2]||100, h: parts[3]||100 };
+  }
+  return {
+    x: 0, y: 0,
+    w: parseFloat(svg.getAttribute('width')) || 100,
+    h: parseFloat(svg.getAttribute('height')) || 100,
+  };
+}
+
+function redrawPreview() {
+  if (!svgDoc) return;
+  $('emptyPreview').style.display = 'none';
+  const canvas = $('previewCanvas');
+  canvas.style.display = 'block';
+
+  const wrap = $('previewWrap');
+  const dpr = window.devicePixelRatio || 1;
+  const W = wrap.clientWidth   || 600;
+  const H = wrap.clientHeight  || 400;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, W, H);
+
+  const vb = getSVGViewBox();
+  const margin = 32;
+  const scaleF = parseInt($('scaleSlider').value) / 100;
+  const fitMode = $('fitMode').value;
+
+  let sx, sy;
+  if (fitMode === 'fill') {
+    sx = (W - margin*2) / vb.w * scaleF;
+    sy = (H - margin*2) / vb.h * scaleF;
+  } else if (fitMode === 'none') {
+    sx = sy = scaleF;
+  } else {
+    const s = Math.min((W - margin*2) / vb.w, (H - margin*2) / vb.h) * scaleF;
+    sx = sy = s;
+  }
+
+  const drawW = vb.w * sx, drawH = vb.h * sy;
+  const tx = (W - drawW) / 2 - vb.x * sx;
+  const ty = (H - drawH) / 2 - vb.y * sy;
+
+  // Draw plot area border
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(tx + vb.x*sx, ty + vb.y*sy, drawW, drawH);
+
+  if (currentView === 'svg') {
+    // Render original SVG via offscreen image
+    const svgStr = new XMLSerializer().serializeToString(svgDoc);
+    const blob = new Blob([svgStr], {type:'image/svg+xml'});
+    const url  = URL.createObjectURL(blob);
+    const img  = new Image();
+    img.onload = () => {
+      ctx.save();
+      ctx.translate(tx, ty);
+      ctx.scale(sx, sy);
+      ctx.drawImage(img, vb.x, vb.y, vb.w, vb.h);
+      ctx.restore();
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+    return;
+  }
+
+  // Paths / travel view — draw sampled path segments
+  const enabledPaths = extractedPaths.filter(p => p.enabled);
+  const colors = generateColors(enabledPaths.length);
+  let lastX = null, lastY = null;
+
+  enabledPaths.forEach((p, pi) => {
+    const pts = samplePath(p.d, 0.5);
+    if (!pts.length) return;
+
+    if (currentView === 'travel' && lastX !== null) {
+      // travel move
+      ctx.beginPath();
+      ctx.moveTo(tx + lastX * sx, ty + lastY * sy);
+      ctx.lineTo(tx + pts[0][0] * sx, ty + pts[0][1] * sy);
+      ctx.strokeStyle = 'rgba(200,245,66,0.18)';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([3,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(tx + pts[0][0]*sx, ty + pts[0][1]*sy);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(tx + pts[i][0]*sx, ty + pts[i][1]*sy);
+    }
+    ctx.strokeStyle = currentView === 'travel' ? colors[pi] : 'rgba(200,245,66,0.75)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    lastX = pts[pts.length-1][0];
+    lastY = pts[pts.length-1][1];
+  });
+}
+
+function generateColors(n) {
+  return Array.from({length:n}, (_,i) => `hsl(${Math.round(i*360/n)},65%,55%)`);
+}
+
+// ─────────────────────────────────────────────
+// SVG path sampling — converts d string to [{x,y}]
+// Uses browser's built-in SVGPathElement.getTotalLength / getPointAtLength
+// ─────────────────────────────────────────────
+const _pathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+const _svgHost = document.createElementNS('http://www.w3.org/2000/svg','svg');
+_svgHost.style.cssText = 'position:absolute;visibility:hidden;width:0;height:0;';
+document.body.appendChild(_svgHost);
+_svgHost.appendChild(_pathEl);
+
+function samplePath(d, stepPx) {
+  try {
+    _pathEl.setAttribute('d', d);
+    const len = _pathEl.getTotalLength();
+    if (!len || isNaN(len)) return [];
+    const step = Math.max(0.1, stepPx);
+    const pts = [];
+    for (let l = 0; l <= len; l += step) {
+      const pt = _pathEl.getPointAtLength(l);
+      pts.push([pt.x, pt.y]);
+    }
+    // always include endpoint
+    const ep = _pathEl.getPointAtLength(len);
+    pts.push([ep.x, ep.y]);
+    return pts;
+  } catch(e) { return []; }
+}
+
+// ─────────────────────────────────────────────
+// G-code generation
+// ─────────────────────────────────────────────
+$('generateBtn').addEventListener('click', async () => {
+  if (!extractedPaths.length) return;
+  $('generateBtn').disabled = true;
+  setProgress(0.05);
+  setStatus('Generating G-code…');
+  await sleep(10);
+
+  try {
+    await generateGcode();
+  } catch(ex) {
+    setStatus('Error: ' + ex.message);
+  }
+
+  $('generateBtn').disabled = false;
+  setProgress(0);
+});
+
+async function generateGcode() {
+  const plotW    = parseFloat($('plotW').value)    || 200;
+  const plotH    = parseFloat($('plotH').value)    || 150;
+  const offsetX  = parseFloat($('offsetX').value)  || 0;
+  const offsetY  = parseFloat($('offsetY').value)  || 0;
+  const feedRate = parseInt($('feedRate').value)   || 3000;
+  const zDown    = parseFloat($('zDown').value);
+  const zUp      = parseFloat($('zUp').value);
+  const zTravel  = parseFloat($('zTravel').value);
+  const prec     = parseInt($('precision').value)  || 3;
+  const cStyle   = $('commentStyle').value;
+  const sortMode = $('sortPaths').value;
+  const stepMm   = parseFloat($('curveStep').value) || 1;
+  const scaleF   = parseInt($('scaleSlider').value) / 100;
+  const fitMode  = $('fitMode').value;
+
+  const vars = {
+    FEED: feedRate, Z_DOWN: zDown.toFixed(prec),
+    Z_UP: zUp.toFixed(prec), Z_TRAVEL: zTravel.toFixed(prec)
+  };
+
+  const C = text => {
+    const c = makeComment(text, cStyle);
+    return c ? [c] : [];
+  };
+  const F = n => n.toFixed(prec);
+
+  // Compute transform from SVG space → mm
+  const vb = getSVGViewBox();
+  let sx, sy;
+  if (fitMode === 'fill') {
+    sx = plotW / vb.w * scaleF;
+    sy = plotH / vb.h * scaleF;
+  } else if (fitMode === 'none') {
+    sx = sy = scaleF;
+  } else {
+    const s = Math.min(plotW / vb.w, plotH / vb.h) * scaleF;
+    sx = sy = s;
+  }
+
+  const drawW = vb.w * sx, drawH = vb.h * sy;
+  // Center within plot area + user offset
+  const baseX = (plotW - drawW) / 2 - vb.x * sx + offsetX;
+  const baseY = (plotH - drawH) / 2 - vb.y * sy + offsetY;
+
+  // Convert SVG step (mm) back to SVG units for sampling
+  const stepSvg = stepMm / Math.max(sx, sy);
+
+  // Collect enabled paths and sample them
+  let paths = extractedPaths.filter(p => p.enabled).map(p => {
+    const pts = samplePath(p.d, stepSvg);
+    // Transform to mm
+    const mmPts = pts.map(([x,y]) => [x * sx + baseX, y * sy + baseY]);
+    return { ...p, mmPts };
+  }).filter(p => p.mmPts.length > 0);
+
+  setProgress(0.3);
+  await sleep(10);
+
+  // Sort
+  if (sortMode === 'nearest') {
+    paths = nearestNeighbourSort(paths);
+  } else if (sortMode === 'yx') {
+    paths.sort((a,b) => {
+      const ay = a.mmPts[0]?.[1] ?? 0, by = b.mmPts[0]?.[1] ?? 0;
+      if (Math.abs(ay-by) > 1) return ay - by;
+      return (a.mmPts[0]?.[0]??0) - (b.mmPts[0]?.[0]??0);
+    });
+  }
+
+  setProgress(0.5);
+  await sleep(10);
+
+  // Build lines
+  const lines = [];
+  lines.push(...C(`SVG Plotter — ${svgFilename}`));
+  lines.push(...C(`Plot area: ${plotW}×${plotH}mm  Scale: ${(scaleF*100).toFixed(0)}%  Paths: ${paths.length}`));
+  lines.push(...C(`Offset: X${offsetX} Y${offsetY}  Sort: ${sortMode}`));
+  if (cStyle !== 'none') lines.push('');
+
+  // Start gcode
+  const startBlock = applyVars($('startGcode').value, vars).trim();
+  if (startBlock) { lines.push(...startBlock.split('\n')); lines.push(''); }
+
+  // Travel to safe height
+  lines.push(`G1 Z${F(zTravel)} F${feedRate}`);
+
+  // Paths
+  paths.forEach((p, pi) => {
+    lines.push(...C(`Path ${pi+1}/${paths.length}: ${p.label}`));
+    const pts = p.mmPts;
+
+    // Move to start (pen up)
+    lines.push(`G1 X${F(pts[0][0])} Y${F(pts[0][1])} F${feedRate}`);
+
+    // Pen down
+    const penDownBlock = applyVars($('penDownGcode').value, vars).trim();
+    if (penDownBlock) lines.push(...penDownBlock.split('\n'));
+
+    // Draw path
+    for (let i = 1; i < pts.length; i++) {
+      lines.push(`G1 X${F(pts[i][0])} Y${F(pts[i][1])} F${feedRate}`);
+    }
+
+    // Pen up
+    const penUpBlock = applyVars($('penUpGcode').value, vars).trim();
+    if (penUpBlock) lines.push(...penUpBlock.split('\n'));
+  });
+
+  lines.push('');
+
+  // End gcode
+  const endBlock = applyVars($('endGcode').value, vars).trim();
+  if (endBlock) { lines.push(...endBlock.split('\n')); lines.push(''); }
+
+  lines.push(...C('=== END ==='));
+
+  gcodeLines = lines;
+  setProgress(0.9);
+  await sleep(10);
+
+  // Render gcode viewer
+  const codeEl = $('gcodeDisplay');
+  const nosEl  = $('gcodeLinenos');
+  codeEl.textContent = lines.join('\n');
+  nosEl.textContent  = lines.map((_,i) => i+1).join('\n');
+  if (!codeEl._scrollBound) {
+    codeEl.addEventListener('scroll', () => { nosEl.scrollTop = codeEl.scrollTop; });
+    codeEl._scrollBound = true;
+  }
+
+  // Stats bar
+  const totalPts = paths.reduce((s,p) => s + p.mmPts.length, 0);
+  $('gcodeStatsBar').innerHTML = `
+    <div class="stat"><strong>${paths.length}</strong>paths</div>
+    <div class="stat"><strong>${totalPts.toLocaleString()}</strong>points</div>
+    <div class="stat"><strong>${lines.length.toLocaleString()}</strong>lines</div>
+    <div class="stat"><strong>${(plotW*scaleF).toFixed(0)}×${(plotH*scaleF).toFixed(0)}</strong>mm</div>
+    <div class="spacer"></div>
+    <button class="btn ghost" onclick="copyGcode()" style="width:auto;padding:4px 14px;font-size:11px">Copy</button>
+  `;
+
+  $('exportBtn').disabled = false;
+  $('viewTravel').disabled = false;
+
+  setProgress(1);
+  setStatusKV([
+    ['paths', paths.length],
+    ['points', totalPts.toLocaleString()],
+    ['lines', lines.length.toLocaleString()],
+    ['bounds', `${(drawW).toFixed(1)}×${(drawH).toFixed(1)}mm`]
+  ]);
+  setTimeout(() => setProgress(0), 400);
+
+  // Switch to gcode tab
+  document.querySelector('.tab[data-tab="gcode"]').click();
+
+  // Redraw preview as toolpath
+  setView('travel');
+  redrawPreview();
+}
+
+// ─────────────────────────────────────────────
+// Nearest-neighbour path sort
+// ─────────────────────────────────────────────
+function nearestNeighbourSort(paths) {
+  if (paths.length <= 1) return paths;
+  const remaining = [...paths];
+  const sorted = [remaining.splice(0, 1)[0]];
+  while (remaining.length) {
+    const last = sorted[sorted.length-1].mmPts;
+    const lx = last[last.length-1][0], ly = last[last.length-1][1];
+    let bestIdx = 0, bestD = Infinity;
+    remaining.forEach((p, i) => {
+      const [fx, fy] = p.mmPts[0];
+      const d = (fx-lx)**2 + (fy-ly)**2;
+      if (d < bestD) { bestD = d; bestIdx = i; }
+    });
+    sorted.push(remaining.splice(bestIdx, 1)[0]);
+  }
+  return sorted;
+}
+
+// ─────────────────────────────────────────────
+// Export
+// ─────────────────────────────────────────────
+$('exportBtn').addEventListener('click', downloadGcode);
+
+function downloadGcode() {
+  if (!gcodeLines.length) return;
+  const gcode = gcodeLines.join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([gcode], {type:'text/plain'}));
+  a.download = svgFilename.replace(/\.svg$/i, '') + '_plotter.gcode';
+  a.click();
+}
+
+function copyGcode() {
+  if (!gcodeLines.length) return;
+  navigator.clipboard.writeText(gcodeLines.join('\n')).then(() => {
+    const btn = $('gcodeStatsBar').querySelector('button');
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); }
+  });
+}
+
+// ─────────────────────────────────────────────
+// Resize redraws preview
+// ─────────────────────────────────────────────
+let _resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => { if (svgDoc) redrawPreview(); }, 120);
+});
+
+// Initial view state
+setView('svg');
+</script>
+</body>
+</html>
