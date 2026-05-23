@@ -93,6 +93,18 @@ flex-direction: column;
 overflow: hidden;
 }
 
+.gcode-page {
+grid-column: 1 / -1;
+padding: 32px 40px;
+overflow-y: auto;
+display: none;
+flex-direction: column;
+gap: 28px;
+max-width: 900px;
+}
+
+.gcode-page.active { display: flex; }
+
 /* Settings page full-width */
 .settings-page {
 grid-column: 1 / -1;
@@ -446,3 +458,106 @@ input::-webkit-inner-spin-button {
 input[type=number] {
     -moz-appearance:textfield; /* Firefox */
 }
+
+input[type=checkbox] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.12s;
+  position: relative;
+}
+
+input[type=checkbox]:hover {
+  border-color: var(--text-muted);
+}
+
+input[type=checkbox]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+input[type=checkbox]:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 4px;
+  height: 8px;
+  border: 2px solid #0f0f0f;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+input[type=checkbox]:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+input[type=checkbox]:focus {
+  border-color: var(--accent);
+}
+
+
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--mono);
+}
+
+.stat strong {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat span {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+
+
+
+
+
+.gcode-viewer {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 6px;
+    font-family: var(--mono); font-size: 0.7rem; line-height: 1.6;
+    overflow: hidden; display: flex; flex-direction: column;
+    min-height: 500px; height: 500px; resize: vertical;
+  }
+  .gcode-viewer-inner { display: flex; flex: 1; overflow: hidden; }
+  .gcode-linenos {
+    flex-shrink: 0; width:72px; padding: 0.75rem 0.5rem 0.75rem 0.75rem;
+    background: var(--bg); border-right: 1px solid var(--border);
+    color: var(--text-dim); text-align: right; overflow: hidden;
+    user-select: none; white-space: pre; line-height: 1.6; font-size: 0.7rem;
+  }
+  .gcode-code {
+    flex: 1; padding: 0.75rem 1rem; overflow: auto;
+    color: var(--text-muted); white-space: pre; line-height: 1.6; font-size: 0.7rem;
+  }
+  .gcode-resize-hint {
+    font-size: 0.6rem; color: var(--text-dim); text-align: right;
+    padding: 2px 8px; border-top: 1px solid var(--border);
+    background: var(--bg); flex-shrink: 0; letter-spacing: 0.04em;
+  }

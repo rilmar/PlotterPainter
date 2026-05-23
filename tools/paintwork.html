@@ -14,6 +14,7 @@
   <div class="nav-tabs">
     <button class="nav-tab active" id="tabMain" onclick="switchTab('main')">Generator</button>
     <button class="nav-tab" id="tabSettings" onclick="switchTab('settings')">Settings</button>
+    <button class="nav-tab" id="tabGcode" onclick="switchTab('gcode')">G-code</button>
   </div>
 </header>
 
@@ -118,19 +119,19 @@
       <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
     </div>
 
-    <div id="layerInfo" style="display:none;">
+    <!-- <div id="layerInfo" style="display:none;">
       <span class="section-label">Color layers</span>
       <div class="color-by-layer" id="layerList"></div>
-    </div>
+    </div> -->
   </aside>
 
   <main class="main">
 
     <div class="toolbar">
       <span class="toolbar-label">View:</span>
-      <button class="btn btn-ghost" id="viewOriginal" disabled style="font-size:11px;padding:5px 10px">Original</button>
+      <button class="btn btn-primary" id="viewOriginal" disabled style="font-size:11px;padding:5px 10px">Original</button>
       <button class="btn btn-ghost" id="viewQuantized" disabled style="font-size:11px;padding:5px 10px">Quantized</button>
-      <button class="btn btn-primary" id="viewStrokes" disabled style="font-size:11px;padding:5px 10px">Strokes</button>
+      <button class="btn btn-ghost" id="viewStrokes" disabled style="font-size:11px;padding:5px 10px">Strokes</button>
       <div style="flex:1"></div>
       <span style="font-family:var(--mono);font-size:11px;color:var(--text-muted)" id="imageInfo"></span>
     </div>
@@ -152,53 +153,18 @@
 
 </div>
 
-
-
-<!--
-  <main class="main">
-    <div class="tabs">
-      <button class="tab active" data-tab="preview">Preview</button>
-      <button class="tab" data-tab="gcode">G-code</button>
-      <button class="tab" data-tab="settings">Settings</button>
-    </div>
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-
-    Preview 
-    <div class="canvas-wrap" id="previewPane">
-      <div class="canvas-grid" id="canvasGrid">
-        <div class="empty-state">
-          <div class="big">⊹</div>
-          <p>Load an image to begin</p>
-        </div>
-      </div>
-    </div>
-
-    G-code
-    <div class="pane" id="gcodePane">
-      <div class="gcode-header">
-        <div class="gcode-stats" id="gcodeStats"></div>
-        <button class="btn secondary" style="width:auto;padding:0.4rem 1rem;" id="copyBtn">Copy</button>
-      </div>
-      <div class="gcode-viewer" id="gcodeViewer">
-        <div class="gcode-viewer-inner">
-          <div class="gcode-linenos" id="gcodeLinenos"></div>
-          <div class="gcode-code" id="gcodeDisplay"></div>
-        </div>
-        <div class="gcode-resize-hint">drag bottom edge to resize ↕</div>
-      </div>
-    </div> -->
-
 <div class="settings-page" id="pageSettings">
   <p class="settings-intro">
-    Define custom G-code blocks injected into the output. Variables: <code style="color:var(--accent)">{{FEED}}</code> <code style="color:var(--accent)">{{Z_UP}}</code> <code style="color:var(--accent)">{{Z_DOWN}}</code>
+    Define custom G-code blocks injected into the output. 
+    <!-- Variables: <code style="color:var(--accent)">{{FEED}}</code> <code style="color:var(--accent)">{{Z_UP}}</code> <code style="color:var(--accent)">{{Z_DOWN}}</code> -->
   </p>
 
   <div class="settings-grid">
 
     <div class="section">
       <div class="section-head">
-        Program start
-        <span class="save-badge" id="startBadge">saved</span>
+        Program Start
+        <!-- <span class="save-badge" id="startBadge">saved</span> -->
       </div>
       <div class="section-body">
         <div class="gcode-label">
@@ -210,95 +176,101 @@ G28       ; home axes
 G1 Z10.0 F600  ; pen up</textarea>
       </div>
     </div>
-  </div>
 
-
-</div>
-
-<!-- 
-    Settings
-    <div class="settings-grid">
-
-        <div class="section">
-          <div class="section-head" >
-            G-code templates
-            <div style="display:flex;gap:6px;align-items:center;">
-              <span id="saveStatus" style="font-size:0.6rem;color:var(--text-dim);letter-spacing:0.04em;"></span>
-              <input type="file" id="settingsFileInput" accept=".json" style="display:none;">
-              <button class="btn secondary" id="loadSettingsBtn" style="width:auto;padding:0.25rem 0.6rem;font-size:0.65rem;border-width:1px;">Load</button>
-              <button class="btn secondary" id="saveSettingsBtn" style="width:auto;padding:0.25rem 0.6rem;font-size:0.65rem;border-width:1px;">Save</button>
-            </div>
-          </div>
-          <div class="settings-block-body">
-
-            <div class="tmpl-field">
-              <label>Program start</label>
-              <div class="hint">Inserted once at the top of the output file.</div>
-              <textarea id="tmplStart" rows="4">G21       ; mm mode
-G90       ; absolute positioning
-G28       ; home axes
-G1 Z10.0 F600  ; pen up</textarea>
-            </div>
-
-            <div class="tmpl-field">
-              <label>Program end</label>
-              <div class="hint">Inserted once at the bottom of the output file.</div>
+    <div class="section">
+      <div class="section-head">
+        Program End
+        <!-- <span class="save-badge" id="startBadge">saved</span> -->
+      </div>
+      <div class="section-body">
+              <div class="gcode-label">Inserted once at the bottom of the output file.</div>
               <textarea id="tmplEnd" rows="3">G1 Z10.0 F600  ; pen up
 G1 X0 Y0 F3000  ; return home
 M2  ; end program</textarea>
-            </div>
+      </div>
+    </div>
 
-            <div class="tmpl-field">
-              <label>Stroke</label>
-              <div class="hint">Runs for every stroke. Variables: <code>{X1}</code> <code>{Y1}</code> <code>{X2}</code> <code>{Y2}</code> <code>{Z_DOWN}</code> <code>{Z_UP}</code> <code>{FEED}</code>.</div>
+    <div class="section">
+      <div class="section-head">
+        Stroke
+        <!-- <span class="save-badge" id="startBadge">saved</span> -->
+      </div>
+      <div class="section-body">
+              <div class="gcode-label">Runs for every stroke. </div>
               <textarea id="tmplStroke" rows="4">G1 X{X1} Y{Y1} F{FEED}
 G1 Z{Z_DOWN} F600
 G1 X{X2} Y{Y2} F{FEED}
 G1 Z{Z_UP} F{FEED}
               </textarea>
-            </div>
+              <div class="hint" style="color:var(--accent-dim)">Available Placeholders:</div>
+              <div class="hint"><code>{X1}</code> <code>{Y1}</code> <code>{X2}</code> <code>{Y2}</code> <code>{Z_DOWN}</code> <code>{Z_UP}</code> <code>{FEED}</code></div>
+      </div>
+    </div>
 
-            <div class="tmpl-field">
-              <label>Color / layer change</label>
-              <div class="hint">
-                Runs when switching to a new color layer. Variables:
-                <code>{COLOR_INDEX}</code> (1-based),
-                <code>{R}</code> <code>{G}</code> <code>{B}</code> incoming color,
-                <code>{Z_UP}</code>.
-              </div>
+    <div class="section">
+      <div class="section-head">
+        Color Change
+        <!-- <span class="save-badge" id="startBadge">saved</span> -->
+      </div>
+      <div class="section-body">
+              <div class="gcode-label">Runs every time the color changes. </div>
               <textarea id="tmplColorChange" rows="3">; Color {COLOR_INDEX} — rgb({R},{G},{B})
-M0  ; pause for pen change</textarea>
-            </div>
+M0  ; pause for pen change
+</textarea>
+              <div class="hint" style="color:var(--accent-dim)">Available Placeholders:</div>
+              <div class="hint" style="color:var(--accent-dim)"><code>{COLOR_INDEX}</code> (1-based),
+                <code>{R}</code> <code>{G}</code> <code>{B}</code> incoming color,
+                <code>{Z_UP}</code>.</div>
+      </div>
+    </div>
 
-            <div class="tmpl-field">
-              <label>Dip Dip sequence</label>
-              <div class="hint">
-                Runs when a color with dipping enabled loads ink. Variables:
-                <code>{DIP_X}</code> <code>{DIP_Y}</code> <code>{DIP_Z}</code> dip coords,
-                <code>{Z_UP}</code> travel height,
-                <code>{FEED}</code>.
-              </div>
+    <div class="section">
+      <div class="section-head">
+        Dip Dip
+        <!-- <span class="save-badge" id="startBadge">saved</span> -->
+      </div>
+      <div class="section-body">
+              <div class="gcode-label">Runs when a color with dipping enabled loads ink.</div>
               <textarea id="tmplDip" rows="5">G1 X{DIP_X} Y{DIP_Y} F{FEED}
 G1 Z{DIP_Z} F300
 G4 P200
-G1 Z{Z_UP} F600</textarea>
-            </div>
-
-          </div>
-        </div>
-
-        <div class="settings-block">
-          <div class="settings-block-head">Color layer settings</div>
-          <div id="colorCfgList">
-            <div class="no-cfg-msg">Generate strokes first to configure color layers.</div>
-          </div>
-        </div>
-
+G1 Z{Z_UP} F600
+              </textarea>
+              <div class="hint" style="color:var(--accent-dim)">Available Placeholders:</div>
+              <div class="hint" style="color:var(--accent-dim)"><code>{DIP_X}</code> <code>{DIP_Y}</code> <code>{DIP_Z}</code> dip coords,
+                <code>{Z_UP}</code> travel height,
+                <code>{FEED}</code>.</div>
       </div>
+    </div>
 
-    <div class="status-bar" id="statusBar">Ready — load an image to start</div>
-  </main>
-</div> -->
+  </div>
+  <!-- End Settings Grid-->
+
+  <p class="settings-intro">
+    Settings for color specific blocks - generate strokes for availability. 
+  </p>
+
+    <div id="colorCfgList">
+    </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
+    <button class="btn btn-ghost" id="loadSettingsBtn">Load Settings</button>
+  </div>
+
+</div>
+
+<div class="gcode-page" id="pageGcode">
+  <div class="gcode-header">
+    <div class="gcode-stats" id="gcodeStats"></div>
+    <button class="btn btn-ghost" style="width:auto;padding:0.4rem 1rem;" id="copyBtn">Copy</button>
+  </div>
+  <div class="gcode-viewer" id="gcodeViewer">
+    <div class="gcode-viewer-inner">
+      <div class="gcode-linenos" id="gcodeLinenos"></div>
+    <div class="gcode-code" id="gcodeDisplay"></div>
+  </div>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -311,7 +283,7 @@ let quantizedCanvas = null;
 let pathCanvas = null;
 let quantizedData = null;
 let colorPalette = [];
-let currentView = 'dots';
+let currentView = 'original';
 
 let sourceImg = null, sourceCanvas = null, strokeCanvas = null;
 let gcodeText = '', palette = [], strokes = [], imageFilename = '', layerCounts = [];
@@ -321,8 +293,10 @@ let colorSettings = []; // [{enabled, dip, dipX, dipY, dipZ, dipEvery}, ...]
 function switchTab(tab) {
   $('pageMain').classList.toggle('active', tab === 'main');
   $('pageSettings').classList.toggle('active', tab === 'settings');
+  $('pageGcode').classList.toggle('active', tab === 'gcode');
   $('tabMain').classList.toggle('active', tab === 'main');
   $('tabSettings').classList.toggle('active', tab === 'settings');
+  $('tabGcode').classList.toggle('active', tab === 'gcode');
 }
 
 
@@ -336,18 +310,19 @@ function switchTab(tab) {
 const dropZone = $('dropZone');
 const fileInput = $('fileInput');
 
-dropZone.addEventListener('click', () => $('fileInput').click());
+// dropZone.addEventListener('click', () => $('fileInput').click()); // causes double load - maybe?
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
 dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); const f = e.dataTransfer.files[0]; if(f) loadFile(f); });
 fileInput.addEventListener('change', e => { if(e.target.files[0]) loadFile(e.target.files[0]); });
 
-// Live G-code rebuild when templates change
-// ['tmplStart','tmplEnd','tmplStroke','tmplColorChange','tmplDip'].forEach(id =>
-//   $(id).addEventListener('input', () => { if(strokes.length && sourceCanvas) buildGcode(sourceCanvas.width, sourceCanvas.height); })
-// );
+//Live G-code rebuild when templates change
+['tmplStart','tmplEnd','tmplStroke','tmplColorChange','tmplDip'].forEach(id =>
+  $(id).addEventListener('input', () => { if(strokes.length && sourceCanvas) buildGcode(sourceCanvas.width, sourceCanvas.height); })
+);
 
 function loadFile(file) {
+  console.log("Loading file");
   imageFilename = file.name;
   const reader = new FileReader();
   reader.onload = e => {
@@ -408,7 +383,7 @@ function setStatus(msg) { $('statusBar').textContent = msg; }
 function setProgress(p) { $('progressFill').style.width = (p*100)+'%'; }
 
 function extractPalettePreview(img) {
-    const n = parseInt($('numColors').value);
+  const n = parseInt($('numColors').value);
   const cv = document.createElement('canvas');
   const sc = Math.min(1, 100/Math.max(img.width,img.height));
   cv.width = Math.round(img.width*sc); cv.height = Math.round(img.height*sc);
@@ -469,40 +444,43 @@ function renderColorCfgUI() {
   const root=$('colorCfgList');
   if(!palette.length){root.innerHTML='<div class="no-cfg-msg">Generate strokes first to configure color layers.</div>';return;}
   root.innerHTML='';
-  const list=document.createElement('div'); list.className='color-cfg-list';
+  const list=document.createElement('div'); list.classList.add('color-cfg-list', 'settings-grid');
 
   palette.forEach((col,i)=>{
     const cs=colorSettings[i];
     const cnt=layerCounts[i]||0;
     const row=document.createElement('div');
-    row.className='color-cfg-row'+(cs.enabled?'':' is-disabled');
+    row.classList.add('color-cfg-row'+(cs.enabled?'':' is-disabled'), "section");
     row.id=`cfgrow-${i}`;
     row.innerHTML=`
-      <div class="cfg-swatch" style="background:rgb(${col[0]},${col[1]},${col[2]})"></div>
-      <div class="cfg-num">${i+1}</div>
-      <div class="cfg-body">
-        <div class="cfg-check-row">
-          <input type="checkbox" id="cfen-${i}" ${cs.enabled?'checked':''}>
-          <label for="cfen-${i}">Enabled in G-code</label>
-        </div>
-        <div class="cfg-check-row">
-          <input type="checkbox" id="cfdip-${i}" ${cs.dip?'checked':''} ${cs.enabled?'':'disabled'}>
-          <label for="cfdip-${i}">Dip brush for this color</label>
-        </div>
-        <div class="cfg-dip-fields" id="cfdipf-${i}" style="display:${cs.dip&&cs.enabled?'flex':'none'}">
-          <div class="cfg-coord-row">
-            <span>X</span><input type="number" id="cfdipx-${i}" value="${cs.dipX}" step="0.1">
-            <span>Y</span><input type="number" id="cfdipy-${i}" value="${cs.dipY}" step="0.1">
-            <span>Z</span><input type="number" id="cfdipz-${i}" value="${cs.dipZ}" step="0.1">
-          </div>
-          <div class="cfg-coord-row">
-            <span style="color:var(--text-muted);min-width:auto;margin-right:4px;">Dip every</span>
-            <input type="number" id="cfdipev-${i}" value="${cs.dipEvery}" min="1" step="1" style="width:52px;">
-            <span style="color:var(--text-dim);font-size:0.65rem;">strokes</span>
-          </div>
-        </div>
+      <div class="section-head">
+        <div class="swatch" style="background:rgb(${col[0]},${col[1]},${col[2]})"></div>
+        <div class="cfg-count">${cnt.toLocaleString()} strokes</div>
       </div>
-      <div class="cfg-count">${cnt.toLocaleString()} strokes</div>`;
+
+      <div class="section-body">
+        <div class="field-row">
+            <label for="cfen-${i}">Enabled</label>
+            <input type="checkbox" id="cfen-${i}" ${cs.enabled?'checked':''}>
+            <label for="cfdip-${i}">Dip Dip</label>
+            <input type="checkbox" id="cfdip-${i}" ${cs.dip?'checked':''} ${cs.enabled?'':'disabled'}>
+        </div>
+      
+        
+        <div id="cfdipf-${i}" style="display:${cs.dip&&cs.enabled?'flex':'none'}; flex-direction: column; gap: 6px;">
+          <div class="field-row">
+            <label>X</label><input type="number" id="cfdipx-${i}" value="${cs.dipX}" step="0.1">
+            <label>Y</label><input type="number" id="cfdipy-${i}" value="${cs.dipY}" step="0.1">
+            <label>Z</label><input type="number" id="cfdipz-${i}" value="${cs.dipZ}" step="0.1">
+          </div>
+          <div class="field-row">
+            <label>Dip every</label>
+            <input type="number" id="cfdipev-${i}" value="${cs.dipEvery}" min="1" step="1" style="width:52px;">
+            <label>strokes</label>
+          </div>
+        </div>
+      </div>`;
+
     list.appendChild(row);
 
     // enabled toggle
@@ -610,6 +588,8 @@ function buildGcode(W,H) {
   lines.push(...tEnd.split('\n'));
 
   gcodeText=lines.join('\n');
+
+  // Gcode text preview functionality
   const codeEl=$('gcodeDisplay');
   const linenosEl=$('gcodeLinenos');
   codeEl.textContent=gcodeText;
@@ -622,21 +602,22 @@ function buildGcode(W,H) {
 
   const enColors=palette.filter((_,i)=>colorSettings[i]?.enabled!==false).length;
   const enStrokes=strokes.filter(s=>colorSettings[s.ci]?.enabled!==false).length;
-  $('gcodeStats').innerHTML=`
-    <div class="stat"><strong>${enStrokes.toLocaleString()}</strong>strokes</div>
-    <div class="stat"><strong>${lines.length.toLocaleString()}</strong>lines</div>
-    <div class="stat"><strong>${Math.max(0,enColors-1)}</strong>pen changes</div>
-    <div class="stat"><strong>${enColors}</strong>colors</div>`;
+  $('gcodeStats').innerHTML=`<div class="stats-row">
+  <div class="stat"><strong>${enStrokes.toLocaleString()}</strong><span>strokes</span></div>
+  <div class="stat"><strong>${lines.length.toLocaleString()}</strong><span>lines</span></div>
+  <div class="stat"><strong>${Math.max(0,enColors-1)}</strong><span>pen changes</span></div>
+  <div class="stat"><strong>${enColors}</strong><span>colors</span></div>
+</div>`;
 
-  $('layerList').innerHTML=palette.map((c,i)=>{
-    const dis=colorSettings[i]&&!colorSettings[i].enabled?' style="opacity:0.35;text-decoration:line-through"':'';
-    return`<div class="layer-row"${dis}>
-      <div class="layer-swatch" style="background:rgb(${c[0]},${c[1]},${c[2]})"></div>
-      <span>Color ${i+1}</span>
-      <span class="layer-count">${(layerCounts[i]||0)} strokes</span>
-    </div>`;
-  }).join('');
-  $('layerInfo').style.display='block';
+  // $('layerList').innerHTML=palette.map((c,i)=>{
+  //   const dis=colorSettings[i]&&!colorSettings[i].enabled?' style="opacity:0.35;text-decoration:line-through"':'';
+  //   return`<div class="layer-row"${dis}>
+  //     <div class="layer-swatch" style="background:rgb(${c[0]},${c[1]},${c[2]})"></div>
+  //     <span>Color ${i+1}</span>
+  //     <span class="layer-count">${(layerCounts[i]||0)} strokes</span>
+  //   </div>`;
+  // }).join('');
+  // $('layerInfo').style.display='block';
 }
 
 async function generate() {
@@ -661,7 +642,7 @@ async function generate() {
   for(let i=0;i<imgData.data.length;i+=4) pixels.push([imgData.data[i],imgData.data[i+1],imgData.data[i+2]]);
   palette=kMeans(pixels,n,15);
   initColorSettings(n);
-  // renderPalette();
+  renderPalette();
 
   setProgress(0.2); setStatus('Building color map…'); await sleep(10);
 
@@ -677,6 +658,7 @@ async function generate() {
 
   showCanvas(quantizedCanvas);
   $('viewQuantized').disabled = false;
+  setActiveView('viewQuantized');
 
 
   // Gradients and stroke placement
@@ -687,7 +669,7 @@ async function generate() {
   const strokeLen=parseInt($('strokeLen').value)*scale;
   const density=parseInt($('density').value)/100;
   const jitter=parseInt($('jitter').value)*Math.PI/180;
-  const spacing=Math.max(2,strokeLen*(1-density*0.7));
+  const spacing=Math.max(2,strokeLen*(1-density));
 
   setProgress(0.4); setStatus('Placing strokes…'); await sleep(10);
 
@@ -794,11 +776,12 @@ async function generate() {
 
   showCanvas(strokeCanvas);
   $('viewStrokes').disabled = false;
+  setActiveView('viewStrokes');
 
-  // setProgress(0.75); setStatus('Generating G-code…'); await sleep(10);
-  // buildGcode(W,H);
-  // renderColorCfgUI();
-  // maybeApplyPendingColorSettings();
+  setProgress(0.75); setStatus('Generating G-code…'); await sleep(10);
+  buildGcode(W,H);
+  renderColorCfgUI();
+  maybeApplyPendingColorSettings();
 
   setProgress(0.9); setStatus('Rendering canvases…'); await sleep(10);
   // renderCanvases(W,H);
@@ -838,9 +821,9 @@ $('downloadBtn').addEventListener('click', ()=>{
   a.href=URL.createObjectURL(new Blob([gcodeText],{type:'text/plain'}));
   a.download=imageFilename.replace(/\.[^.]+$/,'')+'_plotter.gcode'; a.click();
 });
-// $('copyBtn').addEventListener('click', ()=>{
-//   navigator.clipboard.writeText(gcodeText).then(()=>{$('copyBtn').textContent='Copied!';setTimeout(()=>{$('copyBtn').textContent='Copy';},1500);});
-// });
+$('copyBtn').addEventListener('click', ()=>{
+  navigator.clipboard.writeText(gcodeText).then(()=>{$('copyBtn').textContent='Copied!';setTimeout(()=>{$('copyBtn').textContent='Copy';},1500);});
+});
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
@@ -942,8 +925,8 @@ function loadSettingsFromFile(file) {
   reader.readAsText(file);
 }
 
-// $('saveSettingsBtn').addEventListener('click', saveSettings);
-// $('loadSettingsBtn').addEventListener('click', () => $('settingsFileInput').click());
+$('saveSettingsBtn').addEventListener('click', saveSettings);
+$('loadSettingsBtn').addEventListener('click', () => $('settingsFileInput').click());
 // $('settingsFileInput').addEventListener('change', e => {
 //   loadSettingsFromFile(e.target.files[0]);
 //   e.target.value = ''; // reset so same file can be re-loaded
