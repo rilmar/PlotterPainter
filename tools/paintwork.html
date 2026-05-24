@@ -58,7 +58,7 @@
       <div class="section-head">04 · Stroke style</div>
       <div class="section-body">
           <div class="field-row">
-            <label>Stroke length</label>
+            <label>Max stroke length</label>
             <input type="range" id="strokeLen" min="10" max="120" value="40">
             <span class="val-badge" id="strokeLenVal">40px</span>
           </div>
@@ -456,7 +456,7 @@ function renderColorCfgUI() {
     const cs=colorSettings[i];
     const cnt=layerCounts[i]||0;
     const row=document.createElement('div');
-    row.classList.add('color-cfg-row'+(cs.enabled?'':' is-disabled'), "section");
+    row.classList.add('color-cfg-row'+(cs.enabled?'':'is-disabled'), "section");
     row.id=`cfgrow-${i}`;
     row.innerHTML=`
       <div class="section-head">

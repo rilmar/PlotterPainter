@@ -158,20 +158,20 @@ header span {
 .file-name { font-size: 11px; color: var(--accent); margin-top: 6px; word-break: break-all; }
 
 /* ─── CONTROLS ─── */
-.input-row { display: flex; align-items: center; gap: 8px; }
+.input-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .input-row label {
   font-size: 11px; color: var(--text-muted);
   text-transform: uppercase; letter-spacing: 0.1em;
-  white-space: nowrap; flex: 1;
+  white-space: nowrap; flex: 1 1 0; min-width: 0;
 }
-.input-row input { width: 90px; flex-shrink: 0; }
+.input-row input { width: 90px; flex: 0 0 90px; max-width: 100%; }
 .input-unit { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
 
 input[type=number] {
   color: var(--text); background: var(--bg);
   border: 1px solid var(--border); border-radius: var(--radius);
   padding: 6px 8px; font-family: var(--mono); font-size: 12px;
-  outline: none; transition: border-color 0.15s; -moz-appearance: textfield; width: 100%;
+  outline: none; transition: border-color 0.15s; -moz-appearance: textfield; width: auto;
 }
 input[type=number]:focus { border-color: var(--accent); }
 input::-webkit-outer-spin-button,
@@ -420,7 +420,7 @@ textarea:focus { border-color: var(--accent); }
 
         <div class="input-row">
           <label>Brush Z Max</label>
-          <input type="number" id="zThresh" value="1.0" step="0.1" min="-100" max="100">
+          <input type="number" id="zThresh" value="1.0" step="0.1" min="0" max="100">
           <span class="input-unit">mm</span>
         </div>
         <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.06em;line-height:1.5;font-family:var(--sans);font-weight:300;">
