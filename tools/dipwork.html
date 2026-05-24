@@ -446,11 +446,11 @@ textarea:focus { border-color: var(--accent); }
           G-code to inject at each dip point. One command per line.
         </div>
         <textarea id="dipMacro" spellcheck="false">; --- DIP ---
-G0 Z10
+G0 Z35
 G0 X0 Y0
-G0 Z-3
+G0 Z2
 G4 P500
-G0 Z10
+G0 Z35
 ; --- RESUME ---</textarea>
       </div>
     </div>
@@ -461,8 +461,7 @@ G0 Z10
         <div style="font-size:10px;color:var(--text-dim);letter-spacing:0.06em;line-height:1.5;font-family:var(--sans);font-weight:300;margin-bottom:4px;">
           G-code commands that signal pen-up. Any XY movement on the same or next line after one of these will be treated as travel, regardless of Z. One command per line — partial matches are fine (e.g. <code style="color:var(--text-muted)">M3 S0</code>).
         </div>
-        <textarea id="penUpCmds" spellcheck="false" style="min-height:72px;">M3 S0
-M5</textarea>
+        <textarea id="penUpCmds" spellcheck="false" style="min-height:72px;">M3 S250</textarea>
       </div>
     </div>
 
