@@ -58,12 +58,12 @@
       <div class="section-head">04 · Stroke style</div>
       <div class="section-body">
           <div class="field-row">
-            <label>Max stroke length</label>
-            <input type="range" id="strokeLen" min="10" max="120" value="40">
+            <label>Stroke length</label>
+            <input type="range" id="strokeLen" min="10" max="1200" value="40">
             <span class="val-badge" id="strokeLenVal">40px</span>
           </div>
           <div class="field-row">
-            <label>Density</label>
+            <label>Stroke Width</label>
             <input type="range" id="density" min="20" max="100" value="70">
             <span class="val-badge" id="densityVal">70%</span>
           </div>
@@ -521,6 +521,39 @@ function applyTmpl(tmpl,vars){
   return tmpl.replace(/\{(\w+)\}/g,(_,k)=>k in vars?vars[k]:`{${k}}`);
 }
 
+function clipLineToMargins(x1, y1, x2, y2, xMin, yMin) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  let t0 = 0, t1 = 1;
+
+  const clip = (p, q) => {
+    if (p === 0) {
+      return q >= 0;
+    }
+    const r = q / p;
+    if (p < 0) {
+      if (r > t1) return false;
+      if (r > t0) t0 = r;
+    } else {
+      if (r < t0) return false;
+      if (r < t1) t1 = r;
+    }
+    return true;
+  };
+
+  // Clip against x >= xMin and y >= yMin
+  if (!clip(-dx, x1 - xMin)) return null;
+  if (!clip(-dy, y1 - yMin)) return null;
+  if (t1 < t0) return null;
+
+  return {
+    x1: x1 + dx * t0,
+    y1: y1 + dy * t0,
+    x2: x1 + dx * t1,
+    y2: y1 + dy * t1,
+  };
+}
+
 function buildGcode(W,H) {
   let bedW=parseInt($('bedW').value), bedH=parseInt($('bedH').value);
   const feed=parseInt($('feed').value);
@@ -532,7 +565,7 @@ function buildGcode(W,H) {
   const tChange=$('tmplColorChange').value, tDip=$('tmplDip').value;
 
   // use margins - offset on x and y, subtract 2xmargin from bed size
-  bedW-=2*xMargin; bedH-=yMargin;
+  // bedW-=2*xMargin; bedH-=yMargin;
   const sx=bedW/W, sy=bedH/H;
   const scale = Math.min(sx, sy);
 
@@ -585,8 +618,16 @@ function buildGcode(W,H) {
       }
     }
 
-    const x1=(s.x1*scale+xMargin).toFixed(3),y1=((H-s.y1)*scale+yMargin).toFixed(3);
-    const x2=(s.x2*scale+xMargin).toFixed(3),y2=((H-s.y2)*scale+yMargin).toFixed(3);
+    let x1=(s.x1*scale+xMargin), y1=((H-s.y1)*scale+yMargin);
+    let x2=(s.x2*scale+xMargin), y2=((H-s.y2)*scale+yMargin);
+
+    const clipped = clipLineToMargins(x1,y1,x2,y2,xMargin,yMargin);
+    if (!clipped) continue;
+    x1 = clipped.x1.toFixed(3);
+    y1 = clipped.y1.toFixed(3);
+    x2 = clipped.x2.toFixed(3);
+    y2 = clipped.y2.toFixed(3);
+
     lines.push(...applyTmpl(tStroke,{X1:x1,Y1:y1,X2:x2,Y2:y2,FEED:feed,Z_UP:penUp.toFixed(1),Z_DOWN:penDown.toFixed(1)}).split('\n'));
   }
 
@@ -673,9 +714,10 @@ async function generate() {
   const dir=$('strokeDir').value;
   const {gx,gy}=(dir==='gradient')?computeSobel(imgData,W,H):{gx:null,gy:null};
   const strokeLen=parseInt($('strokeLen').value)*scale;
-  const density=parseInt($('density').value)/100;
+  const density=parseInt($('density').value);
   const jitter=parseInt($('jitter').value)*Math.PI/180;
-  const spacing=Math.max(2,strokeLen*(1-density));
+  const spacing=(density*scale)//strokeLen*(1-density));
+  console.log("Density:",density,"Spacing:",spacing,"Scale:",scale);
 
   setProgress(0.4); setStatus('Placing strokes…'); await sleep(10);
 
@@ -705,7 +747,7 @@ async function generate() {
     else if(dir==='diagonal') angle=Math.PI/4;
     else angle=Math.random()*Math.PI;
     angle+=(Math.random()-0.5)*jitter;
-    const len=strokeLen*(0.5+Math.random()*0.5), cos=Math.cos(angle), sin=Math.sin(angle);
+    const len=strokeLen, cos=Math.cos(angle), sin=Math.sin(angle);
     strokes.push({x1:x-cos*len/2,y1:y-sin*len/2,x2:x+cos*len/2,y2:y+sin*len/2,ci});
     layerCounts[ci]++;
   }
@@ -773,7 +815,7 @@ async function generate() {
   strokeCanvas=document.createElement('canvas'); strokeCanvas.width=W; strokeCanvas.height=H;
   const stctx=strokeCanvas.getContext('2d');
   stctx.fillStyle='#fff'; stctx.fillRect(0,0,W,H);
-  const sw=3*scale; // use as 3 for clearer lines
+  const sw=10*scale; // use as 3 for clearer lines
   for(const s of strokes){
     const c=palette[s.ci];
     stctx.strokeStyle=`rgb(${c[0]},${c[1]},${c[2]})`; stctx.lineWidth=sw; stctx.lineCap='round';
